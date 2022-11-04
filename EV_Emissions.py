@@ -135,18 +135,31 @@ epm = st.slider('Enter the Rated kWh/mile of the EV to investigate '
                 '(this calculator internally adjusts for the effect of temperature): '
                 'A 2017 Bolt is .28 according to fueleconomy.gov', value = .28, max_value = 3.0)
 
+#the below is code that finds the energy use of an EV based on the ambient temperature, according to published data
+#(including that from this author from Alaska EVs, see: A Global Daily Solar Photovoltaic Load 
+#Coverage Factor Map for Passenger Electric Vehicles, M Wilber, E Whitney, C Haupert, 2022 IEEE PES/IAS PowerAfrica, 1-4
+#From this paper, the relationship between relative efficiency and T is: RE = .000011T^3 + .00045T^2 - 0.038T + 1.57, T in C!!
+#but careful, this is kWh/mile divided by BEST kWh/mile, where EPA rated kWh/mile is about 1.2 times kWh/mi observed at optimal temperure
 
+##OLD###
 # if T < -9.4F, RL = .59 (probably not totally flat, but don't have data now)
 #if -9.4F < T < 73.4, RL = -.007 T(F) + .524
 #if 73.4 < T, RL = 0
-tmy['RL'] = .59
-tmy['RL'] = tmy['RL'].where((tmy['db_temp'] < -9.4), -.007*tmy['db_temp']+.524)
-tmy['RL'] = tmy['RL'].where((tmy['db_temp'] < 73.4), 0)
+#tmy['RL'] = .59
+#tmy['RL'] = tmy['RL'].where((tmy['db_temp'] < -9.4), -.007*tmy['db_temp']+.524)
+#tmy['RL'] = tmy['RL'].where((tmy['db_temp'] < 73.4), 0)
 
-epm_t = epm/(1-tmy['RL'])
+#epm_t = epm/(1-tmy['RL'])
+
+#database Temperatures are in F, so will make a celcius column as well!
+tmy['T_C'] = (tmy['db_temp'] - 32)*5/9
+
+tmy['EpM_T'] = epm/1.2 *(.000011*tmy['T_C']**3 + .00045*tmy['T_C']**2 - 0.038*tmy['T_C'] + 1.57 
+st.write("kWh per mile at -20C:", epm/1.2 *(.000011*(-20)**3 + .00045*(-20)**2 - 0.038*(-20) + 1.57)
 #energy use: 
-tmy['kwh']= epm_t*tmy['miles']
-
+#tmy['kwh']= epm_t*tmy['miles']
+tmy['kwh']= tmy['EpM_T']*tmy['miles']
+         
 #add on the energy use while parked:
 tmy['kwh'] = tmy.kwh + tmy.parke
 
@@ -231,6 +244,22 @@ ghg_block = cpkwh*kwh_block
 st.write("")
 st.write("The effective yearly average kWh/mile for your EV is calculated as ", round(tmy.kwh.sum()/tmy.miles.sum(),2))
 st.write("This is lower than the rated kWh/mile - cold temperatures lower the range and driving efficiency, and also lead to energy use to keep the battery warm while parked. ")
+st.write("")
+x = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+tmy_month = tmy.resample('M').sum()
+fig, ax = plt.subplots()
+ax.bar(x,tmy_month.kwh, width=0.35, align='edge', label = 'EV')
+
+    
+# Add the axis labels
+ax.set_xlabel('Month')
+ax.set_ylabel('EV Energy Use in kWh')
+
+# Add in a legend and title
+#ax.legend(loc = 'upper right')
+#ax.title('')
+st.pyplot(fig)
+         
 st.write("")
 st.write("Total cost of EV fuel per year = $", round(total_cost_ev,2))
 st.write("Total cost of ICE fuel per year = $", round(total_cost_gas+cost_block,2))
