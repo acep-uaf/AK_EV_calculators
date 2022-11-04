@@ -155,7 +155,7 @@ epm = st.slider('Enter the Rated kWh/mile of the EV to investigate '
 tmy['T_C'] = (tmy['db_temp'] - 32)*5/9
 
 tmy['EpM_T'] = epm/1.2 *(.000011*tmy['T_C']**3 + .00045*tmy['T_C']**2 - 0.038*tmy['T_C'] + 1.57) 
-st.write("kWh per mile at -20C:", epm/1.2 *(.000011*(-20)**3 + .00045*(-20)**2 - 0.038*(-20) + 1.57))
+st.write("kWh per mile at 20C:", epm/1.2 *(.000011*(20)**3 + .00045*(20)**2 - 0.038*(20) + 1.57))
 #energy use: 
 #tmy['kwh']= epm_t*tmy['miles']
 tmy['kwh']= tmy['EpM_T']*tmy['miles']
