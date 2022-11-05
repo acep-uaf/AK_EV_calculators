@@ -139,7 +139,7 @@ epm = st.slider('Enter the Rated kWh/mile of the EV to investigate '
 #(including that from this author from Alaska EVs, see: A Global Daily Solar Photovoltaic Load 
 #Coverage Factor Map for Passenger Electric Vehicles, M Wilber, E Whitney, C Haupert, 2022 IEEE PES/IAS PowerAfrica, 1-4
 #From this paper, the relationship between relative efficiency and T is: RE = .000011T^3 + .00045T^2 - 0.038T + 1.57, T in C!!
-#but careful, this is kWh/mile divided by BEST kWh/mile, where EPA rated kWh/mile is about 1.2 times kWh/mi observed at optimal temperure
+
 
 ##OLD###
 # if T < -9.4F, RL = .59 (probably not totally flat, but don't have data now)
@@ -155,7 +155,6 @@ epm = st.slider('Enter the Rated kWh/mile of the EV to investigate '
 tmy['T_C'] = (tmy['db_temp'] - 32)*5/9
 
 tmy['EpM_T'] = epm/1.2 *(.000011*tmy['T_C']**3 + .00045*tmy['T_C']**2 - 0.038*tmy['T_C'] + 1.57) 
-st.write("kWh per mile at -40C:", epm/1.2 *(.000011*(-40)**3 + .00045*(-40)**2 - 0.038*(-40) + 1.57))
 #energy use: 
 #tmy['kwh']= epm_t*tmy['miles']
 tmy['kwh']= tmy['EpM_T']*tmy['miles']
