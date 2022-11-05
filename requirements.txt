@@ -1,4 +1,5 @@
 numpy
 pandas
 requests
-streamlit == 0.72.0
+streamlit
+matplotlib
