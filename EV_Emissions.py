@@ -11,7 +11,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import requests
-
+from ast import literal_eval
 import matplotlib.pyplot as plt
 
 # Most of the data files are located remotely and are retrieved via
@@ -45,7 +45,7 @@ st.title("Alaska Electric Vehicle Calculator")
 st.write("")
 st.write("This is a calculator to find out how much it would cost to charge an EV at home in Alaska, and what the carbon emissions would be.")
 st.write("A comparison is also made to an internal combustion engine (ICE) vehicle.")
-st.write("Community and Utility data are taken from http://ak-energy-data.analysisnorth.com/ ")
+
 
 #location
 #get the Alaska city data
@@ -60,6 +60,8 @@ tmyid = dfc['TMYid'].loc[dfc['aris_city']==city].iloc[0] #find the corresponding
 #get the tmy for the community chosen:
 tmy = tmy_from_id(tmyid)
 #note: the temperatures are in F :)
+
+ev = st.selectbox('Select your vehicle type:', ('car', 'truck' )) #make a drop down list and get choice#choose vehicle type
 
 
 # # put together a driving profile
@@ -131,6 +133,7 @@ tmy['parke'] = tmy['parke']*tmy['parktime'] #adjusted for amount of time during 
 st.write("") #after being just fine, this was looking wrong - adding some spaces to try to keep text from overlapping
 #if driving:
 #2017 Chevy Bolt is energy per mile (epm) = 28kWh/100mi at 100% range (fueleconomy.gov)
+
 epm = st.slider('Enter the Rated kWh/mile of the EV to investigate '
                 '(this calculator internally adjusts for the effect of temperature): '
                 'A 2017 Bolt is .28 according to fueleconomy.gov', value = .28, max_value = 3.0)
@@ -269,7 +272,8 @@ st.write("The calculations are based on data for commercially available electric
 st.write("Your personal driving habits and other real world conditions could change these results dramatically! ")
 st.write("The underlying model relating energy use with temperature will be updated as we continue to collect cold weather EV data. ")
 st.write("Thanks to Alan Mitchell of Analysis North for Alaskan utility data, tmy files, and wonderful code to access and use them all.")
-st.write("See http://ak-energy-data.analysisnorth.com and https://github.com/alanmitchell/heat-pump-calc")
+st.write("Community and Utility data are taken from http://ak-energy-data.analysisnorth.com/ and https://raw.githubusercontent.com/alanmitchell ")
+st.write("See also https://github.com/alanmitchell/heat-pump-calc")
 st.write("...And definitely check out the Alaskan Heat Pump Calculator at https://heatpump.cf to see if you should get a heat pump!")
 st.write("")
 st.write("")
