@@ -52,6 +52,7 @@ st.write("A comparison is also made to an internal combustion engine (ICE) vehic
 # Access as a Pandas DataFrame
 dfc = get_df('city-util/proc/city.pkl')
 
+#GET THE MOST BASIC DATA NEEDED FOR A SIMPLE INPUT VERSION
 #now create a drop down menu of the available communities and find the corresponding TMYid
 cities = dfc['aris_city'].drop_duplicates().sort_values(ignore_index = True) #get a list of community names
 city = st.selectbox('Select your community:', cities ) #make a drop down list and get choice
@@ -62,11 +63,51 @@ tmy = tmy_from_id(tmyid)
 #note: the temperatures are in F :)
 
 ev = st.selectbox('Select your vehicle type:', ('car', 'truck' )) #make a drop down list and get choice#choose vehicle type
+if ev == 'car':
+    epm = .28 #setting the default energy use per mile according to the EPA here!
+    #2017 Chevy Bolt is energy per mile (epm) = 28kWh/100mi at 100% range (fueleconomy.gov)
+if ev == 'truck':
+    epm = .5
 
+#find driving distance:
+owcommute = (st.slider('How many miles do you drive each day, on average?', value = 10))/2
+weekend = owcommute
+garage = False
+#find default electric rate from Alan Mitchell's database which is updated whenever Akwarm library files are updated
+dfu = pd.read_csv('https://raw.githubusercontent.com/alanmitchell/akwlib-export/main/data/v01/utility.csv')
+util = dfc['ElecUtilities'].loc[dfc['aris_city']==city].iloc[0][0][1]
+if util == 2:
+  util =1 #Anchorage maps to ML&P, but want to map to CEA
+#choose the PCE rate here:
+nonpce = literal_eval(dfu['Blocks'].loc[dfu['ID']==util].iloc[0].replace('nan', 'None'))[0][1]
+if (dfu['PCE'].loc[dfu['ID']==util].iloc[0]==dfu['PCE'].loc[dfu['ID']==util].iloc[0]):
+    PCE = True
+    coe = dfu['PCE'].loc[dfu['ID']==util].iloc[0]
+else:
+    PCE = False
+    coe = nonpce
 
+#more complicated input:
+complicated = st.checkbox("I would like to check and adjust other factors in this calculation.")
+if complicated: 
+    weekend = (st.slider('If you drive a different amount on weekends, how many miles do you drive each weekend day, on average?', value = owcommute))/2   
+ #add a garage option for overnight parking
+    garage = st.checkbox("I park in a garage overnight.")
+   
+    epm = st.slider('Enter the Rated kWh/mile of the EV to investigate '
+                '(this calculator internally adjusts for the effect of temperature): '
+                'A 2017 Bolt is .28 according to fueleconomy.gov', value = .28, max_value = 3.0)
+    rate = coe
+    name = dfu.loc[dfu['ID']==1].iloc[0][1]
+    name.split('-')[0]
+    st.write("According to our records, your utility is",name )
+    if PCE == True:
+        st.write("The PCE-adjusted rate per kWh is",rate)
+    st.write("The full residential rate per kWh is",nonpce)  
+    coe = st.slider('What do you expect to pay per kWh for electricity to charge your EV?', max_value = 1.0, value = rate)
+    st.write("Note: we do not account for partial coverage of PCE, block rates, or commercial rates and demand charges, which could make the electric costs higher than expected from this simple calculator.")
 # # put together a driving profile
-owcommute = (st.slider('How many miles do you drive each weekday, on average?', value = 10))/2
-weekend = (st.slider('How many miles do you drive each weekend day, on average?', value = 10))/2
+
 tmy['miles'] = 0
 #Assume a 'normal' commute of x miles at 8:30am and 5 miles at 5:30pm M-F
 tmy['miles'] = tmy['miles'].where((tmy.index.time !=  datetime.time(8, 30))|(tmy.index.dayofweek > 4),owcommute)
@@ -89,8 +130,7 @@ for i, t in enumerate(tmy['drivetime']):
         tmy.drivetime.iloc[i] = 1
 tmy['parktime'] =1- tmy['drivetime']
 
-#add a garage option for overnight parking
-garage = st.checkbox("I park in a garage overnight.")
+
 tmy['t_park'] = tmy['db_temp']  # set the default parking temp to the outside temp
 if garage:
     Temp_g = st.slider('What temperature is your garage kept at in the winter?', value = 50, max_value = 80)
@@ -131,12 +171,9 @@ tmy['parke'] = tmy['parke'].where(tmy['parke'] > 0,0) #make sure this isn't less
 tmy['parke'] = tmy['parke']*tmy['parktime'] #adjusted for amount of time during the hour spent parked
 
 st.write("") #after being just fine, this was looking wrong - adding some spaces to try to keep text from overlapping
-#if driving:
-#2017 Chevy Bolt is energy per mile (epm) = 28kWh/100mi at 100% range (fueleconomy.gov)
 
-epm = st.slider('Enter the Rated kWh/mile of the EV to investigate '
-                '(this calculator internally adjusts for the effect of temperature): '
-                'A 2017 Bolt is .28 according to fueleconomy.gov', value = .28, max_value = 3.0)
+
+
 
 #the below is code that finds the energy use of an EV based on the ambient temperature, according to published data
 #(including that from this author from Alaska EVs, see: A Global Daily Solar Photovoltaic Load 
@@ -169,8 +206,7 @@ tmy['kwh'] = tmy.kwh + tmy.parke
 #plt.plot(toplot.index, toplot.kwh) - maybe edit to plot something with streamlit!?
 
 #total cost to drive EV for a year:
-coe = st.slider('What do you pay per kWh for electricity?', max_value = 1.0, value = .2)
-st.write("Note: we do not account for PCE, block rates, or demand charges, which could make the electric costs higher than expected from this simple calculator.")
+
 total_cost_ev = coe*tmy.kwh.sum()
 
 #greenhouse gas emissions from electricity:
