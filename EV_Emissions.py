@@ -66,8 +66,10 @@ ev = st.selectbox('Select your vehicle type:', ('car', 'truck' )) #make a drop d
 if ev == 'car':
     epm = .28 #setting the default energy use per mile according to the EPA here!
     #2017 Chevy Bolt is energy per mile (epm) = 28kWh/100mi at 100% range (fueleconomy.gov)
+    mpg = 25 
 if ev == 'truck':
     epm = .5
+    mpg = 20
 
 #find driving distance:
 owcommute = (st.slider('How many miles do you drive each day, on average?', value = 10))/2
@@ -95,7 +97,10 @@ cpkwh_default = dfu['CO2'].loc[dfu['ID']==util].iloc[0]/2.2 #find the CO2 per kW
 cpkwh_default = float(cpkwh_default)
 cpkwh = cpkwh_default
 pvkwh = 0 #initialize to no pv kwh...
-
+dpg = st.slider('What do you pay per gallon of gas?', value = 4, max_value = 20.0)
+plug = False
+idle = 5
+##############################################################################################
 #more complicated input:
 complicated = st.checkbox("I would like to check and adjust other factors in this calculation.")
 if complicated: 
@@ -137,10 +142,18 @@ if complicated:
         st.write("We will use this to reduce the carbon emissions from your EV electricity.")
 
 #comparison to gas:
-mpg = st.slider('What is the mpg of your gas car?', value = 25, max_value = 60)
-dpg = st.slider('What is the price of gas per gallon?', value = 3.5, max_value = 10.0)
+    mpg = st.slider('What is the mpg of your gas vehicle?', value = 25, max_value = 60)
     
-    # # put together a driving profile
+    plug = st.checkbox("I have a block heater on my gas car.")
+
+    if plug:
+        st.write("This calculator assumes a block heater is used for your gas car any day the minimum temperature has been less than 20F")
+        plug_hrs = st.slider("How many hours do you plug in your block heater each day?", max_value = 24, value = 2)
+        plug_w = st.slider("How many watts is your block heater (or block plus oil heater)?", min_value = 400, max_value = 1600)
+    idle = st.slider("How many minutes do you idle your gas car on cold days (to warm up or keep your car warm)?", max_value = 500, value = 5)
+#######################################3   
+    
+# # put together a driving profile
 
 tmy['miles'] = 0
 #Assume a 'normal' commute of x miles at 8:30am and 5 miles at 5:30pm M-F
@@ -262,14 +275,11 @@ plug_days = tmy_12.plug.sum()
 plug = st.checkbox("I have a block heater on my gas car.")
 
 if plug:
-    st.write("This calculator assumes a block heater is used for your gas car any day the minimum temperature has been less than 20F")
-    plug_hrs = st.slider("How many hours do you plug in your block heater each day?", max_value = 24, value = 2)
-    plug_w = st.slider("How many watts is your block heater (or block plus oil heater)?", min_value = 400, max_value = 1600)
     kwh_block = plug_w/1000*plug_hrs*plug_days
 else:
     kwh_block = 0
 cost_block = coe*kwh_block
-idle = st.slider("How many minutes do you idle your gas car on cold days (to warm up or keep your car warm)?", max_value = 500, value = 5)
+
 idleg = .2*idle/60*plug_days #cars use about .2g/hr or more at idle : https://www.chicagotribune.com/autos/sc-auto-motormouth-0308-story.html
 
 total_cost_gas = (tmy.gas.sum()+idleg)*dpg
@@ -288,6 +298,12 @@ st.write("")
 st.write("The effective yearly average kWh/mile for your EV is calculated as ", round(tmy.kwh.sum()/tmy.miles.sum(),2))
 st.write("This is lower than the rated kWh/mile - cold temperatures lower the range and driving efficiency, and also lead to energy use to keep the battery warm while parked. ")
 st.write("")
+
+st.write("Total cost of EV fuel per year = $", round(total_cost_ev,2))
+st.write("Total cost of ICE fuel per year = $", round(total_cost_gas+cost_block,2))
+st.write("Total kg CO2 EV per year = ", round(ghg_ev,2))
+st.write("Total kg CO2 ICE per year = ", round(ghg_ice + ghg_block,2))
+st.write("")
 x = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 tmy_month = tmy.resample('M').sum()
 fig, ax = plt.subplots()
@@ -303,11 +319,7 @@ ax.set_ylabel('EV Energy Use in kWh')
 #ax.title('')
 st.pyplot(fig)
          
-st.write("")
-st.write("Total cost of EV fuel per year = $", round(total_cost_ev,2))
-st.write("Total cost of ICE fuel per year = $", round(total_cost_gas+cost_block,2))
-st.write("Total kg CO2 EV per year = ", round(ghg_ev,2))
-st.write("Total kg CO2 ICE per year = ", round(ghg_ice + ghg_block,2))
+
 st.write(" ")
 st.write("The calculations are based on data for commercially available electric cars, results may not hold for other types of electric vehicles. ")
 st.write("Your personal driving habits and other real world conditions could change these results dramatically! ")
