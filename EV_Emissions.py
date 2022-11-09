@@ -272,8 +272,6 @@ tmy_12['plug'] = 0
 tmy_12['plug'] = tmy_12['plug'].where(tmy_12.db_temp > 20, 1)
 plug_days = tmy_12.plug.sum()
 
-plug = st.checkbox("I have a block heater on my gas car.")
-
 if plug:
     kwh_block = plug_w/1000*plug_hrs*plug_days
 else:
