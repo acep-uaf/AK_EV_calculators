@@ -100,6 +100,7 @@ pvkwh = 0 #initialize to no pv kwh...
 dpg = st.slider('How many dollars do you pay per gallon of gas?', value = 4.00, max_value = 20.00)
 plug = False
 idle = 5
+garage = False
 ##############################################################################################
 #more complicated input:
 complicated = st.checkbox("I would like to check and adjust other factors in this calculation.")
@@ -107,6 +108,8 @@ if complicated:
     weekend = (st.slider('If you drive a different amount on weekends, how many miles do you drive each weekend day, on average?', value = 10))/2   
  #add a garage option for overnight parking
     garage = st.checkbox("I park in a garage overnight.")
+    if garage:
+        Temp_g = st.slider('What temperature is your garage kept at in the winter?', value = 50, max_value = 80)
    
     epm = st.slider('Enter the Rated kWh/mile of the EV to investigate '
                 '(this calculator internally adjusts for the effect of temperature): '
@@ -180,8 +183,6 @@ tmy['parktime'] =1- tmy['drivetime']
 
 tmy['t_park'] = tmy['db_temp']  # set the default parking temp to the outside temp
 if garage:
-    Temp_g = st.slider('What temperature is your garage kept at in the winter?', value = 50, max_value = 80)
-
     # where the time is at or after 8:30 and before or at 17:30, parking temp is default, otherwise it is garage temp if garage temp < outside temp:
     tmy['t_park'] = tmy['t_park'].where(
         ((tmy.index.time >= datetime.time(8, 30)) & (tmy.index.time <= datetime.time(17, 30)))|(tmy.t_park > Temp_g), Temp_g)
