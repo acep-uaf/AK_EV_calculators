@@ -119,9 +119,9 @@ if complicated:
     name = name.split('-')[0]
     st.write("According to our records, your utility is",name )
     if PCE == True:
-        st.write("The PCE-adjusted rate per kWh is",nonpce - pce)
-    st.write("The full residential rate per kWh is",nonpce)  
-    round(rate,2)
+        st.write("The PCE-adjusted rate per kWh is",round(nonpce - pce,2))
+    st.write("The full residential rate per kWh is",round(nonpce,2))  
+    
     coe = st.slider('What do you expect to pay per kWh for electricity to charge your EV?', max_value = 1.00, value = round(rate,2))
     st.write("Note: we do not account for partial coverage of PCE, block rates, or commercial rates and demand charges, which could make the electric costs higher than expected from this simple calculator.")
 
