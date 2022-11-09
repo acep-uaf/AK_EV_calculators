@@ -113,7 +113,7 @@ if complicated:
    
     epm = st.slider('Enter the Rated kWh/mile of the EV to investigate '
                 '(this calculator internally adjusts for the effect of temperature): '
-                'A 2017 Bolt is .28 according to fueleconomy.gov', value = .28, max_value = 3.0)
+                'check at fueleconomy.gov', value = epm, max_value = 3.0)
     rate = coe
     name = dfu.loc[dfu['ID']==util].iloc[0][1]
     name = name.split('-')[0]
