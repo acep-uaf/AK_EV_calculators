@@ -80,12 +80,13 @@ if util == 2:
   util =1 #Anchorage maps to ML&P, but want to map to CEA
 #choose the PCE rate here:
 nonpce = literal_eval(dfu['Blocks'].loc[dfu['ID']==util].iloc[0].replace('nan', 'None'))[0][1]
-if (dfu['PCE'].loc[dfu['ID']==util].iloc[0]==dfu['PCE'].loc[dfu['ID']==util].iloc[0]):
+if (dfu['PCE'].loc[dfu['ID']==util].iloc[0]==dfu['PCE'].loc[dfu['ID']==util].iloc[0]) or dfu['PCE'].loc[dfu['ID']==util].iloc[0] > 0:
     PCE = True
     coe = dfu['PCE'].loc[dfu['ID']==util].iloc[0]
 else:
     PCE = False
     coe = nonpce
+PCE
 
 #more complicated input:
 complicated = st.checkbox("I would like to check and adjust other factors in this calculation.")
