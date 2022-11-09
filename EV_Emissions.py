@@ -55,7 +55,7 @@ dfc = get_df('city-util/proc/city.pkl')
 #GET THE MOST BASIC DATA NEEDED FOR A SIMPLE INPUT VERSION
 #now create a drop down menu of the available communities and find the corresponding TMYid
 cities = dfc['aris_city'].drop_duplicates().sort_values(ignore_index = True) #get a list of community names
-city = st.selectbox('Select your community:', cities ) #make a drop down list and get choice
+city = st.selectbox('Select your community (start typing to jump down the list):', cities ) #make a drop down list and get choice
 tmyid = dfc['TMYid'].loc[dfc['aris_city']==city].iloc[0] #find the corresponding TMYid
 
 #get the tmy for the community chosen:
@@ -90,7 +90,7 @@ else:
 #more complicated input:
 complicated = st.checkbox("I would like to check and adjust other factors in this calculation.")
 if complicated: 
-    weekend = (st.slider('If you drive a different amount on weekends, how many miles do you drive each weekend day, on average?', value = owcommute, max_value = 100))/2   
+    weekend = (st.slider('If you drive a different amount on weekends, how many miles do you drive each weekend day, on average?', value = 10))/2   
  #add a garage option for overnight parking
     garage = st.checkbox("I park in a garage overnight.")
    
