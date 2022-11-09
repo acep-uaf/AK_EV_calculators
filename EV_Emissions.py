@@ -146,7 +146,7 @@ if complicated:
         st.write("We will use this to reduce the carbon emissions from your EV electricity.")
 
 #comparison to gas:
-    mpg = st.slider('What is the mpg of your gas vehicle?', value = 25, max_value = 60)
+    mpg = st.slider('What is the mpg of your gas vehicle?', value = mpg, max_value = 60)
     
     plug = st.checkbox("I have a block heater on my gas car.")
 
