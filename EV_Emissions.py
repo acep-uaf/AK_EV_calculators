@@ -105,7 +105,7 @@ garage = False
 #more complicated input:
 complicated = st.checkbox("I would like to check and adjust other factors in this calculation.")
 if complicated: 
-    weekend = (st.slider('If you drive a different amount on weekends, how many miles do you drive each weekend day, on average?', value = owcommute*2, max_value = 100))/2   
+    weekend = (st.slider('If you drive a different amount on weekends, how many miles do you drive each weekend day, on average?', value = owcommute*2, max_value = 100.0))/2   
  #add a garage option for overnight parking
     garage = st.checkbox("I park in a garage overnight.")
     if garage:
