@@ -87,7 +87,6 @@ if ((pce==pce) and pce > 0):
 else:
     PCE = False
     coe = nonpce
-PCE
 
 #more complicated input:
 complicated = st.checkbox("I would like to check and adjust other factors in this calculation.")
@@ -104,7 +103,7 @@ if complicated:
     name = name.split('-')[0]
     st.write("According to our records, your utility is",name )
     if PCE == True:
-        st.write("The PCE-adjusted rate per kWh is",rate)
+        st.write("The PCE-adjusted rate per kWh is",pce)
     st.write("The full residential rate per kWh is",nonpce)  
     coe = st.slider('What do you expect to pay per kWh for electricity to charge your EV?', max_value = 1.0, value = rate)
     st.write("Note: we do not account for partial coverage of PCE, block rates, or commercial rates and demand charges, which could make the electric costs higher than expected from this simple calculator.")
