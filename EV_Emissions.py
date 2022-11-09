@@ -75,7 +75,7 @@ weekend = owcommute
 garage = False
 #find default electric rate from Alan Mitchell's database which is updated whenever Akwarm library files are updated
 dfu = pd.read_csv('https://raw.githubusercontent.com/alanmitchell/akwlib-export/main/data/v01/utility.csv')
-util = dfc['ElecUtilities'].loc[dfc['aris_city']==city].iloc[0][0][1]
+util = dfc['ElecUtilities'].loc[dfc['aris_city']==city].iloc[0][0][1] #find a utility id for the community chosen
 if util == 2:
   util =1 #Anchorage maps to ML&P, but want to map to CEA
 #choose the PCE rate here:
@@ -87,6 +87,14 @@ if ((pce==pce) and pce > 0):
 else:
     PCE = False
     coe = nonpce
+#greenhouse gas emissions from electricity:
+# Access Alan's Alaska utility data as a Pandas DataFrame
+#dfu = get_df('city-util/proc/utility.pkl') #older, non updated emissions
+ 
+cpkwh_default = dfu['CO2'].loc[dfu['ID']==util].iloc[0]/2.2 #find the CO2 per kWh for the community and divide by 2.2 to change pounds to kg
+cpkwh_default = float(cpkwh_default)
+cpkwh = cpkwh_default
+pvkwh = 0 #initialize to no pv kwh...
 
 #more complicated input:
 complicated = st.checkbox("I would like to check and adjust other factors in this calculation.")
@@ -107,7 +115,32 @@ if complicated:
     st.write("The full residential rate per kWh is",nonpce)  
     coe = st.slider('What do you expect to pay per kWh for electricity to charge your EV?', max_value = 1.0, value = .2)
     st.write("Note: we do not account for partial coverage of PCE, block rates, or commercial rates and demand charges, which could make the electric costs higher than expected from this simple calculator.")
-# # put together a driving profile
+
+    st.write("")
+    cpkwh = st.slider("How many kg of CO2 are emitted per kWh for your utility "
+                  "(if you don't know, leave it at the default value here, which is specific to your community "
+                  "but might become out of date."
+                  "  Another caveat - the default is based on total utility emissions, but additional electricity may come from a cleaner or dirtier source."
+                  "  For instance, in Fairbanks, any new electricity is likely to be generated from Naptha, which is cleaner than the utility average,"
+                  "  so a better value to use below for Fairbanks might be 0.54)?:", max_value = 2.0, value = cpkwh_default)
+    
+    ispv = st.checkbox("I will have solar panels at my home for the purpose of offsetting my EV emissions.")
+    if ispv:
+        pv = st.slider("How many kW of solar will you have installed? (pro tip: this calculator assumes a yearly capacity factor "
+                   "of 10%.  This is reasonable for most of Alaska, but if you are an engineering wiz and want to"
+                   " correct this slider for the details of your installation, go ahead!)",
+                   max_value = 25.0, value = 3.0)
+    #at 10% capacity factor this equation below gives the number of PV kWh generated - we will be kind and
+    #attribute them all to the EV, subtracting them off of the emissions
+        pvkwh = .1*24*365*pv
+        st.write("The annual kWh that your solar panels are estimated to generate:", round(pvkwh,3))
+        st.write("We will use this to reduce the carbon emissions from your EV electricity.")
+
+#comparison to gas:
+mpg = st.slider('What is the mpg of your gas car?', value = 25, max_value = 60)
+dpg = st.slider('What is the price of gas per gallon?', value = 3.5, max_value = 10.0)
+    
+    # # put together a driving profile
 
 tmy['miles'] = 0
 #Assume a 'normal' commute of x miles at 8:30am and 5 miles at 5:30pm M-F
@@ -210,37 +243,8 @@ tmy['kwh'] = tmy.kwh + tmy.parke
 
 total_cost_ev = coe*tmy.kwh.sum()
 
-#greenhouse gas emissions from electricity:
-# Access Alan's Alaska utility data as a Pandas DataFrame
-dfu = get_df('city-util/proc/utility.pkl')
 
-util = dfc['ElecUtilities'].loc[dfc['aris_city']==city].iloc[0][0][1] #find a utility id for the community chosen
-cpkwh_default = dfu['CO2'].loc[dfu['ID']==util].iloc[0]/2.2 #find the CO2 per kWh for the community and divide by 2.2 to change pounds to kg
-cpkwh_default = float(cpkwh_default)
-st.write("")
-cpkwh = st.slider("How many kg of CO2 are emitted per kWh for your utility "
-                  "(if you don't know, leave it at the default value here, which is specific to your community "
-                  "but might be a couple of years out of date."
-                  "  Another caveat - the default is based on total utility emissions, but additional electricity may come from a cleaner or dirtier source."
-                  "  For instance, in Fairbanks, any new electricity is likely to be generated from Naptha, which is cleaner than the utility average,"
-                  "  so a better value to use below for Fairbanks might be 0.54)?:", max_value = 2.0, value = cpkwh_default)
-pvkwh = 0 #initialize to no pv kwh...
-ispv = st.checkbox("I will have solar panels at my home for the purpose of offsetting my EV emissions.")
-if ispv:
-    pv = st.slider("How many kW of solar will you have installed? (pro tip: this calculator assumes a yearly capacity factor "
-                   "of 10%.  This is reasonable for most of Alaska, but if you are an engineering wiz and want to"
-                   " correct this slider for the details of your installation, go ahead!)",
-                   max_value = 25.0, value = 3.0)
-    #at 10% capacity factor this equation below gives the number of PV kWh generated - we will be kind and
-    #attribute them all to the EV, subtracting them off of the emissions
-    pvkwh = .1*24*365*pv
-    st.write("The annual kWh that your solar panels are estimated to generate:", round(pvkwh,3))
-    st.write("We will use this to reduce the carbon emissions from your EV electricity.")
-
-#comparison to gas:
-mpg = st.slider('What is the mpg of your gas car?', value = 25, max_value = 60)
-dpg = st.slider('What is the price of gas per gallon?', value = 3.5, max_value = 10.0)
-#make this temperature dependent too like above.
+#make the mpg of the gas vehicle temperature dependent too like above.
 #according to fueleconomy.gov, an ICE can have 15 to 25% lower mpg at 20F than 77F. the 25% is for trips under 3-4 miles, so could adjust the below later for this
 #for now I am just using 20% less
 tmy['mpg'] = mpg
