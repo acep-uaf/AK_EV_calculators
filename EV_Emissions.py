@@ -51,7 +51,8 @@ st.write("A comparison is also made to an internal combustion engine (ICE) vehic
 #get the Alaska city data
 # Access as a Pandas DataFrame
 dfc = get_df('city-util/proc/city.pkl')
-
+#find default electric rate from Alan Mitchell's database which is updated whenever Akwarm library files are updated
+dfu = pd.read_csv('https://raw.githubusercontent.com/alanmitchell/akwlib-export/main/data/v01/utility.csv')
 #GET THE MOST BASIC DATA NEEDED FOR A SIMPLE INPUT VERSION
 #now create a drop down menu of the available communities and find the corresponding TMYid
 cities = dfc['aris_city'].drop_duplicates().sort_values(ignore_index = True) #get a list of community names
@@ -75,17 +76,16 @@ if ev == 'truck':
 owcommute = (st.slider('How many miles do you drive each day, on average?', value = 10))/2
 weekend = owcommute
 garage = False
-#find default electric rate from Alan Mitchell's database which is updated whenever Akwarm library files are updated
-dfu = pd.read_csv('https://raw.githubusercontent.com/alanmitchell/akwlib-export/main/data/v01/utility.csv')
+
 util = dfc['ElecUtilities'].loc[dfc['aris_city']==city].iloc[0][0][1] #find a utility id for the community chosen
 if util == 2:
   util =1 #Anchorage maps to ML&P, but want to map to CEA
 #choose the PCE rate here:
 nonpce = literal_eval(dfu['Blocks'].loc[dfu['ID']==util].iloc[0].replace('nan', 'None'))[0][1]
-pce = dfu['PCE'].loc[dfu['ID']==util].iloc[0]
+pce = dfu['PCE'].loc[dfu['ID']==util].iloc[0] #this is the PCE adjustment to the full rate!
 if ((pce==pce) and pce > 0):
     PCE = True
-    coe = pce
+    coe = nonpce - pce
 else:
     PCE = False
     coe = nonpce
@@ -105,7 +105,7 @@ garage = False
 #more complicated input:
 complicated = st.checkbox("I would like to check and adjust other factors in this calculation.")
 if complicated: 
-    weekend = (st.slider('If you drive a different amount on weekends, how many miles do you drive each weekend day, on average?', value = 10))/2   
+    weekend = (st.slider('If you drive a different amount on weekends, how many miles do you drive each weekend day, on average?', value = owcommute*2))/2   
  #add a garage option for overnight parking
     garage = st.checkbox("I park in a garage overnight.")
     if garage:
@@ -119,9 +119,9 @@ if complicated:
     name = name.split('-')[0]
     st.write("According to our records, your utility is",name )
     if PCE == True:
-        st.write("The PCE-adjusted rate per kWh is",pce)
+        st.write("The PCE-adjusted rate per kWh is",nonpce - pce)
     st.write("The full residential rate per kWh is",nonpce)  
-    coe = st.slider('What do you expect to pay per kWh for electricity to charge your EV?', max_value = 1.0, value = .2)
+    coe = st.slider('What do you expect to pay per kWh for electricity to charge your EV?', max_value = 1.00, value = round(rate,2))
     st.write("Note: we do not account for partial coverage of PCE, block rates, or commercial rates and demand charges, which could make the electric costs higher than expected from this simple calculator.")
 
     st.write("")
