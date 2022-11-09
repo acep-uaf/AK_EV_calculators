@@ -97,7 +97,7 @@ cpkwh_default = dfu['CO2'].loc[dfu['ID']==util].iloc[0]/2.2 #find the CO2 per kW
 cpkwh_default = float(cpkwh_default)
 cpkwh = cpkwh_default
 pvkwh = 0 #initialize to no pv kwh...
-dpg = st.slider('What do you pay per gallon of gas?', value = 4.00, max_value = 20.00)
+dpg = st.slider('How many dollars do you pay per gallon of gas?', value = 4.00, max_value = 20.00)
 plug = False
 idle = 5
 ##############################################################################################
