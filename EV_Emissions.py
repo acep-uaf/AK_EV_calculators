@@ -98,8 +98,8 @@ if complicated:
                 '(this calculator internally adjusts for the effect of temperature): '
                 'A 2017 Bolt is .28 according to fueleconomy.gov', value = .28, max_value = 3.0)
     rate = coe
-    name = dfu.loc[dfu['ID']==1].iloc[0][1]
-    name.split('-')[0]
+    name = dfu.loc[dfu['ID']==util].iloc[0][1]
+    name = name.split('-')[0]
     st.write("According to our records, your utility is",name )
     if PCE == True:
         st.write("The PCE-adjusted rate per kWh is",rate)
