@@ -81,7 +81,7 @@ if util == 2:
 #choose the PCE rate here:
 nonpce = literal_eval(dfu['Blocks'].loc[dfu['ID']==util].iloc[0].replace('nan', 'None'))[0][1]
 pce = dfu['PCE'].loc[dfu['ID']==util].iloc[0]
-if ((pce==pce) and pce > 0:
+if ((pce==pce) and pce > 0):
     PCE = True
     coe = pce
 else:
