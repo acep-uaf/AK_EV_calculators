@@ -122,7 +122,7 @@ if complicated:
         st.write("The PCE-adjusted rate per kWh on record is",round(nonpce - pce,2))
     st.write("The full residential rate per kWh on record is",round(nonpce,2))  
     st.write("It is likely that these values are out of data and need to be adjusted - check your electricity bill to update the value below.") 
-    coe = st.slider('What do you expect to pay per kWh for electricity to charge your EV?',  value = round(float(nonpce - pce),2))#,max_value = 1.00)
+    coe = st.slider('What do you expect to pay per kWh for electricity to charge your EV?',  value = round(float(rate),2)), max_value = 1.50)
     st.write("Note: we do not account for partial coverage of PCE, block rates, or commercial rates and demand charges, which could make the electric costs higher than expected from this simple calculator.")
 
     st.write("")
