@@ -154,7 +154,7 @@ if complicated:
         st.write("This calculator assumes a block heater is used for your gas car any day the minimum temperature has been less than 20F")
         plug_hrs = st.slider("How many hours do you plug in your block heater each day?", max_value = 24, value = 2)
         plug_w = st.slider("How many watts is your block heater (or block plus oil heater)?", min_value = 400, max_value = 1600)
-    idle = st.slider("How many minutes do you idle your gas car on cold days (to warm up or keep your car warm)?", max_value = 500, value = 5)
+    idle = st.slider("How many minutes do you idle your gas car on cold days (to warm up or keep your car warm)?", max_value = 1440, value = 5)
 #######################################3   
     
 # # put together a driving profile
