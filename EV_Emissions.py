@@ -295,14 +295,12 @@ if ghg_ev < 0:
 ghg_block = cpkwh*kwh_block
 
 st.write("")
-st.write("The effective yearly average kWh/mile for your EV is calculated as ", round(tmy.kwh.sum()/tmy.miles.sum(),2))
-st.write("This is a lower efficiency than the rated kWh/mile - cold temperatures lower the range and driving efficiency, and also lead to energy use to keep the battery warm while parked. ")
-st.write("")
 
-st.write("Total cost of EV fuel per year = $", round(total_cost_ev,2))
-st.write("Total cost of ICE fuel per year = $", round(total_cost_gas+cost_block,2))
-st.write("Total kg CO2 EV per year = ", round(ghg_ev,2))
-st.write("Total kg CO2 ICE per year = ", round(ghg_ice + ghg_block,2))
+
+st.write("Total cost of Electric Vehicle fuel per year = $", round(total_cost_ev,2))
+st.write("Total cost of Internal Combustion Engine (gas) fuel per year = $", round(total_cost_gas+cost_block,2))
+st.write("Total kg CO2 emmisions of Electric Vehicle per year = ", round(ghg_ev,2))
+st.write("Total kg CO2 emmisions of Internal Combustion Engine per year = ", round(ghg_ice + ghg_block,2))
 st.write("")
 x = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 tmy_month = tmy.resample('M').sum()
@@ -318,7 +316,9 @@ ax.set_ylabel('EV Energy Use in kWh')
 #ax.legend(loc = 'upper right')
 #ax.title('')
 st.pyplot(fig)
-         
+st.write("")       
+st.write("The effective yearly average kWh/mile for your EV is calculated as ", round(tmy.kwh.sum()/tmy.miles.sum(),2))
+st.write("This is a lower efficiency than the rated kWh/mile - cold temperatures lower the range and driving efficiency, and also lead to energy use to keep the battery warm while parked. ")
 
 st.write(" ")
 st.write("The calculations are based on data for commercially available electric cars, results may not hold for other types of electric vehicles. ")
