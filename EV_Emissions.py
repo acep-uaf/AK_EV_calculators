@@ -299,8 +299,10 @@ st.write("")
 
 st.write("Total cost of Electric Vehicle fuel per year = $", round(total_cost_ev,2))
 st.write("Total cost of Internal Combustion Engine (gas) fuel per year = $", round(total_cost_gas+cost_block,2))
-st.write("Total kg CO2 emmisions of Electric Vehicle per year = ", round(ghg_ev,2))
-st.write("Total kg CO2 emmisions of Internal Combustion Engine per year = ", round(ghg_ice + ghg_block,2))
+st.write("Total kg CO2 emissions of Electric Vehicle per year = ", round(ghg_ev,2))
+st.write("Total kg CO2 emissions of Internal Combustion Engine per year = ", round(ghg_ice + ghg_block,2))
+st.write("")
+st.write("Note that costs and emissions for the Internal Combustion Engine vehicle include gas and any electricity used for block/oilpan/etc heating.")
 st.write("")
 x = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 tmy_month = tmy.resample('M').sum()
