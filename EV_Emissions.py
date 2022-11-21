@@ -154,7 +154,9 @@ if complicated:
         st.write("This calculator assumes a block heater is used for your gas car any day the minimum temperature has been less than 20F")
         plug_hrs = st.slider("How many hours do you plug in your block heater each day?", max_value = 24, value = 2)
         plug_w = st.slider("How many watts is your block heater (or block plus oil heater)?", min_value = 400, max_value = 1600)
-    idle = st.slider("How many minutes do you idle your gas car on cold days (to warm up or keep your car warm)?", max_value = 1440, value = 5)
+        #we will also use 20F as the temperature below which idling happens, but could change that with better info, or allow a choice
+    idle = st.slider("How many minutes do you idle your car on cold days (to warm up or keep your car warm)?", max_value = 1440, value = 5)
+    
 #######################################3   
     
 # # put together a driving profile
@@ -174,6 +176,8 @@ speed = 30
 tmy['drivetime'] = tmy['miles'] / speed  # make a new column for time spent driving in fraction of an hour
 
 # if time is greater than an hour, we need to also mark sequential hours with correct amount
+# max miles in a day is currently 100, meaning 50 miles morn and eve - 1.67 hours each, or 8:30am to 10:10am and 17:30 to 19:10
+# max idle is 24 hours, apply first between morn and eve driving, then before morning drive, then after eve drive, ignore anything left
 
 for i, t in enumerate(tmy['drivetime']):
     if t > 1:
