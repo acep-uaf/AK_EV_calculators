@@ -327,6 +327,9 @@ st.write("The effective yearly average kWh/mile for your EV is calculated as ", 
 st.write("This is a lower efficiency than the rated kWh/mile - cold temperatures lower the range and driving efficiency, and also lead to energy use to keep the battery warm while parked. ")
 
 st.write(" ")
+
+st.write("This project was made possible by funding from the Alaska Energy Authority, Office of Naval Research (ONR) Award # N00014-18-S-B001, and the National Science Foundation’s Navigating the New Arctic program’s “Planning Collaborative Research: Electric Vehicles in the Arctic” project (award # 2127171) ")
+
 st.write("The calculations are based on data for commercially available electric cars, results may not hold for other types of electric vehicles. ")
 st.write("Your personal driving habits and other real world conditions could change these results dramatically! ")
 st.write("The underlying model relating energy use with temperature will be updated as we continue to collect cold weather EV data. ")
