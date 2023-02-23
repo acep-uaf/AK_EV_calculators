@@ -222,6 +222,13 @@ tmy['parke'] = tmy['t_park'] * -.004 + .25
 tmy['parke'] = tmy['parke'].where(tmy['parke'] > 0,0) #make sure this isn't less than zero!
 
 tmy['parke'] = tmy['parke']*tmy['parktime'] #adjusted for amount of time during the hour spent parked
+#NEED TO MAKE UPDATES HERE!  Data from an Anchorage Bolt shows a different trend for an UNPLUGGED park. Preliminary data
+#shows that the trend is similar except that when unplugged, kWh/hr does not exceed .25
+#it is unknown if this is general to all vehicles or just the Bolt.
+#ALSO, FOR WARM IDLE - we now have trends for idling the Anchorage Bolt, and a few data points for a north slope Lightning.
+#more data is needed, but at this time the apparent trend is: -0.189 * T(F) + 7.56 but not less than 0 or more than ~7.66kWh/hr
+#we do expect a maximum at some point as heating systems run full blast...
+
 
 st.write("") #after being just fine, this was looking wrong - adding some spaces to try to keep text from overlapping
 
@@ -247,7 +254,11 @@ st.write("") #after being just fine, this was looking wrong - adding some spaces
 #database Temperatures are in F, so will make a celcius column as well!
 tmy['T_C'] = (tmy['db_temp'] - 32)*5/9
 
-tmy['EpM_T'] = epm/1.2 *(.000011*tmy['T_C']**3 + .00045*tmy['T_C']**2 - 0.038*tmy['T_C'] + 1.57) 
+#tmy['EpM_T'] = epm/1.2 *(.000011*tmy['T_C']**3 + .00045*tmy['T_C']**2 - 0.038*tmy['T_C'] + 1.57)
+#from some preliminary north slope Lightning data we have, it seems that the higher order terms/slope does not scale with the EPA rated
+#efficiency, just the intercept.  This makes sense as the cabin size to heat is similar to a car (the battery is bigger though,
+#so it might require more heat?) anyway, the below fits the data we have from the truck better:
+tmy['EpM_T'] = .28/1.2 *(.000011*tmy['T_C']**3 + .00045*tmy['T_C']**2 - 0.038*tmy['T_C']) + epm/1.2 * 1.57
 #energy use: 
 #tmy['kwh']= epm_t*tmy['miles']
 tmy['kwh']= tmy['EpM_T']*tmy['miles']
