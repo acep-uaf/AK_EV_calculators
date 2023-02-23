@@ -358,9 +358,7 @@ tmy['parke'] = tmy['parke'].where(tmy['parke'] > 0,0) #make sure this isn't less
 # where the time is at or after 8:30 and before or at 17:30, parke is a max of .25: 
 tmy['parke'] = tmy['parke'].where(
         ((tmy.index.time <= datetime.time(8, 30)) | (tmy.index.time >= datetime.time(17, 30)))|(tmy.parke < .25), .25)
-    #double check this worked!
-    
-print(tmy.query('parke > .25'))
+  
 
 tmy['parke'] = tmy['parke']*tmy['parktime'] #adjusted for amount of time during the hour spent parked
 
