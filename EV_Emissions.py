@@ -183,8 +183,138 @@ for i, t in enumerate(tmy['drivetime']):
     if t > 1:
         tmy.drivetime.iloc[i + 1] = tmy.drivetime.iloc[i + 1] + tmy.drivetime.iloc[i] - 1
         tmy.drivetime.iloc[i] = 1
-tmy['parktime'] =1- tmy['drivetime']
+        
+##########################################################################################################
+###  This section is to add in the idletime 
 
+tmy['idletime'] = 0
+
+#######Take care of weekdays first:###################
+#need to know a breakdown for how idle time compares to other things:
+#portion of an hour available for idling at end of morning commute:
+startidle = 1 - (owcommute/speed - int(owcommute/speed))
+#hour during which this end of morning commute is happening:
+start = 8 + int(owcommute/speed)
+#time of idle between morn and eve commute:
+if idle/60 < 9-owcommute/speed: #make sure everything is in hours!
+  between = idle/60 #between is the time between commutes that is spent idling
+else:
+  between = 9-owcommute/speed
+
+#time of idle before morn commute:
+extra = idle/60-between
+if extra < 8:
+  before = extra
+  extraextra = 0
+else:
+  before = 8
+  extraextra = extra - 8
+
+
+if startidle < idle/60:
+  left = between - startidle #how much is left of idle time in hours for in between the commutes
+  end = start + 1 + int(left)
+  endidle = left-int(left)
+  tmy['idletime'] = tmy['idletime'].where((tmy.index.time !=  datetime.time(start, 30))|(tmy.index.dayofweek > 4),startidle)
+  tmy['idletime'] = tmy['idletime'].where(((tmy.index.time <=  datetime.time(start, 30))|(tmy.index.time >=  datetime.time(end, 30)))|(tmy.index.dayofweek > 4),1)
+  tmy['idletime'] = tmy['idletime'].where((tmy.index.time !=  datetime.time(end, 30))|(tmy.index.dayofweek > 4),endidle)
+else:
+  tmy['idletime'] = tmy['idletime'].where((tmy.index.time !=  datetime.time(start, 30))|(tmy.index.dayofweek > 4),idle/60)
+#if idle is less than the time in between commutes (8:30 + owcommute/speed to 17:30), just need to fill in the hours then
+#however if, there is extra time:
+if before > 0: #there are more idle hours to add in!
+#add it before the morning commute, but only back until 12:30am!
+  startbefore = 8 - int(before)
+  #either before is 8 and this is 0 and all 1's should go in, 
+  #or before is less than 8 and this is a time where the hour before might have a value < 1
+  tmy['idletime'] = tmy['idletime'].where(((tmy.index.time <  datetime.time(startbefore, 30))|(tmy.index.time >=  datetime.time(8, 30)))|(tmy.index.dayofweek > 4),1)
+  if before - int(before) > 0: #this means two things - there is a remainder to add and also the startbefore is not before 12:30am
+    tmy['idletime'] = tmy['idletime'].where((tmy.index.time !=  datetime.time(startbefore-1, 30))|(tmy.index.dayofweek > 4),before - int(before))
+#and now if there is no extraextra, we are done, but if there is we need to add that!
+if extraextra > 0:
+  #idle time to start after eve commute
+  starteve = 17+int(owcommute/speed)
+  if extraextra < startidle: #just a little idling to throw after the eve commute!
+    tmy['idletime'] = tmy['idletime'].where((tmy.index.time !=  datetime.time(starteve, 30))|(tmy.index.dayofweek > 4),extraextra)
+  else:
+    left = extraextra - startidle #how much is left of idle time in hours after the commutes
+    end = starteve + 1 + int(left)
+  
+    if end <= 23:
+      endidle = left-int(left)
+    else:
+      end = 23
+      endidle = 1
+    tmy['idletime'] = tmy['idletime'].where((tmy.index.time !=  datetime.time(starteve, 30))|(tmy.index.dayofweek > 4),startidle)
+    tmy['idletime'] = tmy['idletime'].where(((tmy.index.time <=  datetime.time(starteve, 30))|(tmy.index.time >=  datetime.time(end, 30)))|(tmy.index.dayofweek > 4),1)
+    tmy['idletime'] = tmy['idletime'].where((tmy.index.time !=  datetime.time(end, 30))|(tmy.index.dayofweek > 4),endidle)
+
+#NOW need to do this for weekends too!
+#first, if there is no driving on the weekends, don't put in any idle!!
+if weekend > 0:
+#need to know a breakdown for how idle time compares to other things:
+#portion of an hour available for idling at end of morning commute:
+  startidle = 1 - (weekend/speed - int(weekend/speed))
+#hour during which this end of morning commute is happening:
+  start = 8 + int(weekend/speed)
+#time of idle between morn and eve commute:
+  if idle/60 < 9-weekend/speed: #make sure everything is in hours!
+    between = idle/60 #between is the time between commutes that is spent idling
+  else:
+    between = 9-weekend/speed
+#time of idle before morn commute:
+  extra = idle/60-between
+  if extra < 8:
+    before = extra
+    extraextra = 0
+  else:
+    before = 8
+    extraextra = extra - 8
+
+
+  if startidle < idle/60:
+    left = between - startidle #how much is left of idle time in hours for in between the commutes
+    end = start + 1 + int(left)
+    endidle = left-int(left)
+    tmy['idletime'] = tmy['idletime'].where((tmy.index.time !=  datetime.time(start, 30))|(tmy.index.dayofweek < 5),startidle)
+    tmy['idletime'] = tmy['idletime'].where(((tmy.index.time <=  datetime.time(start, 30))|(tmy.index.time >=  datetime.time(end, 30)))|(tmy.index.dayofweek < 5),1)
+    tmy['idletime'] = tmy['idletime'].where((tmy.index.time !=  datetime.time(end, 30))|(tmy.index.dayofweek < 5),endidle)
+  else:
+    tmy['idletime'] = tmy['idletime'].where((tmy.index.time !=  datetime.time(start, 30))|(tmy.index.dayofweek < 5),idle/60)
+#if idle is less than the time in between commutes (8:30 + owcommute/speed to 17:30), just need to fill in the hours then
+#however if, there is extra time:
+  if before > 0: #there are more idle hours to add in!
+  #add it before the morning commute, but only back until 12:30am!
+    startbefore = 8 - int(before)
+    #either before is 8 and this is 0 and all 1's should go in, 
+    #or before is less than 8 and this is a time where the hour before might have a value < 1
+    tmy['idletime'] = tmy['idletime'].where(((tmy.index.time <  datetime.time(startbefore, 30))|(tmy.index.time >=  datetime.time(8, 30)))|(tmy.index.dayofweek < 5),1)
+    if before - int(before) > 0: #this means two things - there is a remainder to add and also the startbefore is not before 12:30am
+      tmy['idletime'] = tmy['idletime'].where((tmy.index.time !=  datetime.time(startbefore-1, 30))|(tmy.index.dayofweek < 5),before - int(before))
+#and now if there is no extraextra, we are done, but if there is we need to add that!
+  if extraextra > 0:
+  #idle time to start after eve commute
+    starteve = 17+int(owcommute/speed)
+    if extraextra < startidle: #just a little idling to throw after the eve commute!
+      tmy['idletime'] = tmy['idletime'].where((tmy.index.time !=  datetime.time(starteve, 30))|(tmy.index.dayofweek < 5),extraextra)
+    else:
+      left = extraextra - startidle #how much is left of idle time in hours after the commutes
+      end = starteve + 1 + int(left)
+  
+      if end <= 23:
+        endidle = left-int(left)
+      else:
+        end = 23
+        endidle = 1
+      tmy['idletime'] = tmy['idletime'].where((tmy.index.time !=  datetime.time(starteve, 30))|(tmy.index.dayofweek < 5),startidle)
+      tmy['idletime'] = tmy['idletime'].where(((tmy.index.time <=  datetime.time(starteve, 30))|(tmy.index.time >=  datetime.time(end, 30)))|(tmy.index.dayofweek < 5),1)
+      tmy['idletime'] = tmy['idletime'].where((tmy.index.time !=  datetime.time(end, 30))|(tmy.index.dayofweek < 5),endidle)
+
+############################################################################################
+#ok, now we've got the idletime marked, so we can calculate the (non-idle) parked time:
+
+#tmy['parktime'] =1- tmy['drivetime']
+tmy['parktime'] =1- tmy['drivetime'] - tmy['idletime']
 
 tmy['t_park'] = tmy['db_temp']  # set the default parking temp to the outside temp
 if garage:
@@ -229,8 +359,24 @@ tmy['parke'] = tmy['parke']*tmy['parktime'] #adjusted for amount of time during 
 #more data is needed, but at this time the apparent trend is: -0.189 * T(F) + 7.56 but not less than 0 or more than ~7.66kWh/hr
 #we do expect a maximum at some point as heating systems run full blast...
 
+#now do the same for idling!  Will need to refine this when have more data, but for now
+#a minimum of 0kW, a max of 7kw (this forum says that is the max power of the Bolt heater: https://www.chevybolt.org/threads/how-long-can-a-bolt-battery-sustain-cabin-heat.37519/)
+#and in between use this relationship seen in my chevy bolt unpublished data: 
+#kW =  -0.173(T in F) + 7.84
+idleT = 40 #note this is in F - sorry for not picking and staying with F/C!  Its a problem of a calculator in F
+#since that is what Alaskan public is used to and scientific/engineering work in C.  Really, the US should
+#have switched to metric when we had the chance!!
 
-st.write("") #after being just fine, this was looking wrong - adding some spaces to try to keep text from overlapping
+tmy['idlee'] = tmy['t_park'] * -.189 + 7.56 #from my Bolt warm 'idle' data as of 2/23/23 - this IS in F
+tmy['idlee'] = tmy['idlee'].where(tmy['idlee'] > 0, 0) #min of 0kW
+tmy['idlee'] = tmy['idlee'].where(tmy['idlee'] < 7.56, 7.56) #max of 7.56 kWh/hr, highest seen in N. Slope lightning data, but for short idle...
+#right now the max idle temp by the fit is 40F, and I think that is ok, it is cold enough to want to keep the car warm...
+#I have set the idleT above to match this so that the gas vehicle idles at the same T
+tmy['idlee'] = tmy['idlee'].where(tmy['t_park'] < idleT, 0) #if parked temperature is greater than idleT, set idle energy to 0.
+tmy['idlee'] = tmy['idlee']*tmy['idletime']#adjusted for amount of time during the hour spent idling
+
+
+st.write("") #adding some spaces to try to keep text from overlapping
 
 
 
@@ -240,21 +386,10 @@ st.write("") #after being just fine, this was looking wrong - adding some spaces
 #Coverage Factor Map for Passenger Electric Vehicles, M Wilber, E Whitney, C Haupert, 2022 IEEE PES/IAS PowerAfrica, 1-4
 #From this paper, the relationship between relative efficiency and T is: RE = .000011T^3 + .00045T^2 - 0.038T + 1.57, T in C!!
 
-
-##OLD###
-# if T < -9.4F, RL = .59 (probably not totally flat, but don't have data now)
-#if -9.4F < T < 73.4, RL = -.007 T(F) + .524
-#if 73.4 < T, RL = 0
-#tmy['RL'] = .59
-#tmy['RL'] = tmy['RL'].where((tmy['db_temp'] < -9.4), -.007*tmy['db_temp']+.524)
-#tmy['RL'] = tmy['RL'].where((tmy['db_temp'] < 73.4), 0)
-
-#epm_t = epm/(1-tmy['RL'])
-
 #database Temperatures are in F, so will make a celcius column as well!
 tmy['T_C'] = (tmy['db_temp'] - 32)*5/9
 
-#tmy['EpM_T'] = epm/1.2 *(.000011*tmy['T_C']**3 + .00045*tmy['T_C']**2 - 0.038*tmy['T_C'] + 1.57)
+#tmy['EpM_T'] = epm/1.2 *(.000011*tmy['T_C']**3 + .00045*tmy['T_C']**2 - 0.038*tmy['T_C'] + 1.57) #old!!
 #from some preliminary north slope Lightning data we have, it seems that the higher order terms/slope does not scale with the EPA rated
 #efficiency, just the intercept.  This makes sense as the cabin size to heat is similar to a car (the battery is bigger though,
 #so it might require more heat?) anyway, the below fits the data we have from the truck better:
@@ -264,10 +399,10 @@ tmy['EpM_T'] = .28/1.2 *(.000011*tmy['T_C']**3 + .00045*tmy['T_C']**2 - 0.038*tm
 tmy['kwh']= tmy['EpM_T']*tmy['miles']
          
 #add on the energy use while parked:
-tmy['kwh'] = tmy.kwh + tmy.parke
+#tmy['kwh'] = tmy.kwh + tmy.parke
+#add on the energy use while parked and idling:
+tmy['kwh'] = tmy.kwh + tmy.parke + tmy.idlee
 
-#toplot=tmy['2018-5-23':'2018-5-30']
-#plt.plot(toplot.index, toplot.kwh) - maybe edit to plot something with streamlit!?
 
 #total cost to drive EV for a year:
 
@@ -282,8 +417,20 @@ tmy['mpg'] = tmy['mpg'].where((tmy['db_temp'] > 77), mpg - .2*mpg*(77-tmy['db_te
 
 tmy['gas'] = tmy.miles/tmy.mpg #gallons of gas used for driving a gas car
 
+#################################
+# add gas from idling in the cold
+############################
+#cars use about .2g/hr or more at idle : https://www.chicagotribune.com/autos/sc-auto-motormouth-0308-story.html
+#could make pickup trucks .4g/hr, but leave it at this from now since don't change e-truck either...
+#idleg = .2*idle/60*plug_days 
+tmy['idleg'] = 0
+tmy['idleg'] = tmy['idleg'].where(tmy['t_park'] > idleT, .2) #only idle when less than idle Temperature set above 
+tmy['idleg'] = tmy['idleg']*tmy['idletime']#adjusted for amount of time during the hour spent idling
+tmy['gas'] = tmy['gas'] + tmy['idleg']
 
-#what about the engine block heater or idling in the cold?
+total_cost_gas = tmy.gas.sum()*dpg
+
+#what about the engine block heater?
 tmy_12 = tmy[['db_temp']].resample('D', label = 'right').min()
 tmy_12['plug'] = 0
 tmy_12['plug'] = tmy_12['plug'].where(tmy_12.db_temp > 20, 1)
@@ -295,13 +442,14 @@ else:
     kwh_block = 0
 cost_block = coe*kwh_block
 
-idleg = .2*idle/60*plug_days #cars use about .2g/hr or more at idle : https://www.chicagotribune.com/autos/sc-auto-motormouth-0308-story.html
-
-total_cost_gas = (tmy.gas.sum()+idleg)*dpg
+#older idle calcs:
+#idleg = .2*idle/60*plug_days #cars use about .2g/hr or more at idle : https://www.chicagotribune.com/autos/sc-auto-motormouth-0308-story.html
+#total_cost_gas = (tmy.gas.sum()+idleg)*dpg
 
 #now look at ghg emissions:
 #Every gallon of gasoline burned creates about 8.887 kg of CO2 (EPA)
-ghg_ice = 8.887*(tmy.gas.sum()+idleg)
+#ghg_ice = 8.887*(tmy.gas.sum()+idleg) #old
+ghg_ice = 8.887*tmy.gas.sum()
 
 ghg_ev = cpkwh*(tmy.kwh.sum() - pvkwh)
 if ghg_ev < 0:
@@ -312,10 +460,10 @@ ghg_block = cpkwh*kwh_block
 st.write("")
 
 
-st.write("Total cost of Electric Vehicle fuel per year = $", round(total_cost_ev,2))
-st.write("Total cost of Internal Combustion Engine (gas) fuel per year = $", round(total_cost_gas+cost_block,2))
-st.write("Total kg CO2 emissions of Electric Vehicle per year = ", round(ghg_ev,2))
-st.write("Total kg CO2 emissions of Internal Combustion Engine per year = ", round(ghg_ice + ghg_block,2))
+st.write("Total cost of Electric Vehicle fuel per year = $", round(total_cost_ev,0))
+st.write("Total cost of Internal Combustion Engine (gas) fuel per year = $", round(total_cost_gas+cost_block,0))
+st.write("Total kg CO2 emissions of Electric Vehicle per year = ", round(ghg_ev,0))
+st.write("Total kg CO2 emissions of Internal Combustion Engine per year = ", round(ghg_ice + ghg_block,0))
 st.write("")
 st.write("Note that costs and emissions for the Internal Combustion Engine vehicle include gas and any electricity used for block/oilpan/etc heating.")
 st.write("")
