@@ -350,19 +350,28 @@ if garage:
 #which is why I am trying to find a data-supported relationship that matches what I see in that data
 tmy['parke'] = tmy['t_park'] * -.004 + .25
 tmy['parke'] = tmy['parke'].where(tmy['parke'] > 0,0) #make sure this isn't less than zero!
-
-tmy['parke'] = tmy['parke']*tmy['parktime'] #adjusted for amount of time during the hour spent parked
 #NEED TO MAKE UPDATES HERE!  Data from an Anchorage Bolt shows a different trend for an UNPLUGGED park. Preliminary data
 #shows that the trend is similar except that when unplugged, kWh/hr does not exceed .25
 #it is unknown if this is general to all vehicles or just the Bolt.
-#ALSO, FOR WARM IDLE - we now have trends for idling the Anchorage Bolt, and a few data points for a north slope Lightning.
-#more data is needed, but at this time the apparent trend is: -0.189 * T(F) + 7.56 but not less than 0 or more than ~7.66kWh/hr
+#we will assume the vehicle is plugged in at night and unplugged during the day.  This is a big assumption and should allow for
+#adjustment in the future!!
+# where the time is at or after 8:30 and before or at 17:30, parke is a max of .25: 
+tmy['parke'] = tmy['parke'].where(
+        ((tmy.index.time <= datetime.time(8, 30)) | (tmy.index.time >= datetime.time(17, 30)))|(tmy.parke < .25), .25)
+    #double check this worked!
+    
+print(tmy.query('tmy.parke > .25')
+
+tmy['parke'] = tmy['parke']*tmy['parktime'] #adjusted for amount of time during the hour spent parked
+
+
+#FOR WARM IDLE - we now have trends for idling the Anchorage Bolt, and a few data points for a north slope Lightning.
+#more data is needed, but at this time the apparent trend from the Bolt is: -0.189 * T(F) + 7.56 but not less than 0,
+# the few Lightning data points at about -10F are in line with this, with a maximum of ~7.56kWh/hr
 #we do expect a maximum at some point as heating systems run full blast...
 
-#now do the same for idling!  Will need to refine this when have more data, but for now
-#a minimum of 0kW, a max of 7kw (this forum says that is the max power of the Bolt heater: https://www.chevybolt.org/threads/how-long-can-a-bolt-battery-sustain-cabin-heat.37519/)
-#and in between use this relationship seen in my chevy bolt unpublished data: 
-#kW =  -0.173(T in F) + 7.84
+#(this forum says that 7kw is the max power of the Bolt heater: https://www.chevybolt.org/threads/how-long-can-a-bolt-battery-sustain-cabin-heat.37519/)
+
 idleT = 40 #note this is in F - sorry for not picking and staying with F/C!  Its a problem of a calculator in F
 #since that is what Alaskan public is used to and scientific/engineering work in C.  Really, the US should
 #have switched to metric when we had the chance!!
