@@ -85,10 +85,10 @@ nonpce = literal_eval(dfu['Blocks'].loc[dfu['ID']==util].iloc[0].replace('nan', 
 pce = dfu['PCE'].loc[dfu['ID']==util].iloc[0] #this is the PCE adjustment to the full rate!
 if ((pce==pce) and pce > 0):
     PCE = True
-    coe = nonpce - pce
+ #   coe = nonpce - pce #I used this when I wanted to chose the PCE adjusted rate as the default, but since I am not doing this, don't need it
 else:
     PCE = False
-    coe = nonpce
+   # coe = nonpce
 #greenhouse gas emissions from electricity:
 # Access Alan's Alaska utility data as a Pandas DataFrame
 #dfu = get_df('city-util/proc/utility.pkl') #older, non updated emissions
@@ -114,7 +114,7 @@ if complicated:
     epm = st.slider('Enter the Rated kWh/mile of the EV to investigate '
                 '(this calculator internally adjusts for the effect of temperature): '
                 'check at fueleconomy.gov', value = epm, max_value = 3.0)
-    rate = coe
+    rate = nonpce
     name = dfu.loc[dfu['ID']==util].iloc[0][1]
     name = name.split('-')[0]
     st.write("According to our records, your utility is",name )
