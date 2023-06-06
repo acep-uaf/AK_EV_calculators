@@ -89,6 +89,7 @@ if ((pce==pce) and pce > 0):
 else:
     PCE = False
    # coe = nonpce
+coe = nonpce
 #greenhouse gas emissions from electricity:
 # Access Alan's Alaska utility data as a Pandas DataFrame
 #dfu = get_df('city-util/proc/utility.pkl') #older, non updated emissions
