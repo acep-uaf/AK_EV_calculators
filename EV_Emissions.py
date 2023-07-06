@@ -69,7 +69,7 @@ ev = st.selectbox('Select your vehicle type:', ('car', 'truck' )) #make a drop d
 if ev == 'car':
     epm = .28 #setting the default energy use per mile according to the EPA here!
     #2017 Chevy Bolt is energy per mile (epm) = 28kWh/100mi at 100% range (fueleconomy.gov)
-    mpg = 25 
+    mpg = 27 
 if ev == 'truck':
     epm = .5
     mpg = 20
