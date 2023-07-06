@@ -61,7 +61,9 @@ tmyid = dfc['TMYid'].loc[dfc['aris_city']==city].iloc[0] #find the corresponding
 
 #get the tmy for the community chosen:
 tmy = tmy_from_id(tmyid)
-#note: the temperatures are in F :)
+
+#database Temperatures are in F, so will make a celcius column as well, since our energy use relationships use celcius
+tmy['T_C'] = (tmy['db_temp'] - 32)*5/9
 
 ev = st.selectbox('Select your vehicle type:', ('car', 'truck' )) #make a drop down list and get choice#choose vehicle type
 if ev == 'car':
@@ -110,7 +112,8 @@ if complicated:
  #add a garage option for overnight parking
     garage = st.checkbox("I park in a garage overnight.")
     if garage:
-        Temp_g = st.slider('What temperature is your garage kept at in the winter?', value = 50, max_value = 80)
+        Temp_gF = st.slider('What temperature is your garage kept at in the winter?', value = 50, max_value = 80)
+        Temp_g = (Temp_gF - 32)*5/9 #put it in C for calculations
    
     epm = st.slider('Enter the Rated kWh/mile of the EV to investigate '
                 '(this calculator internally adjusts for the effect of temperature): '
@@ -314,100 +317,68 @@ if weekend > 0:
 ############################################################################################
 #ok, now we've got the idletime marked, so we can calculate the (non-idle) parked time:
 
-#tmy['parktime'] =1- tmy['drivetime']
 tmy['parktime'] =1- tmy['drivetime'] - tmy['idletime']
 
-tmy['t_park'] = tmy['db_temp']  # set the default parking temp to the outside temp
+tmy['t_park'] = tmy['T_C'] # set the default parking temp to the outside temp - in C
 if garage:
     # where the time is at or after 8:30 and before or at 17:30, parking temp is default, otherwise it is garage temp if garage temp < outside temp:
     tmy['t_park'] = tmy['t_park'].where(
         ((tmy.index.time >= datetime.time(8, 30)) & (tmy.index.time <= datetime.time(17, 30)))|(tmy.t_park > Temp_g), Temp_g)
 
-# # Use the relationship between temperature and energy use to find the total energy use
+# # Use the relationship between temperature and energy use to find the total parked energy use
 
-#from CEA's Wattson:  to condition battery while parked: 
-# parke (kWh/hr) = -.0092 * Temp(F) + .5206 (down to 2.5F at least), and not 
-#less than 0!
-#https://www.greencarreports.com/news/1115039_chevy-bolt-ev-electric-car-range-and-performance-in-winter-one-owners-log
-#the resource above says that a Bolt used 24 miles of range when parked for 30 hours outside
-#at -4F, which might be a little to a lot less than below depending on how many kWh the
-#range corresponds to (temperature adjusted or not?? - since this is reported by the car, it is likely temperature adjusted)
-#I calculate this might be anywhere from 0.2 to 0.5 kWh/hr energy use - probably the higher value.
-# The Wattson relation above gives me ~0.56kWh/hr, the code actually used below give 0.266kWh/hr
 
-#T.S. reports 10 miles of range loss while parked for 2 hours, unplugged, at 28F (Tesla Y),
-#at .28 kwh/mile, this is 1.4kWh/hr!  This is far above the range of any linear fit tried.
+#from an analysis of the data of 3 Bolts in southcentral Alaska, energy to condition battery while parked, while plugged in: 
+# parke (kWh/hr) = -.015 * Temp(C) + .26 , and not less than 0
 
-#Wattson relationship:
-#tmy['parke'] = tmy['t_park'] * -.0092 + .5206 #linear relationship of energy use with temperature
+tmy['parke'] = tmy['t_park'] * -.015 + .26
+tmy['parke'] = tmy['parke'].where(tmy['parke'] > 0,0) #make sure this isn't less than zero! Could just do this once, below...
 
-#I have some messy data from 4 Alaskan Teslas as well, and adding to the Wattson data, here is
-#the trend I get - it gives the EV a bit more benefit of the doubt!
-#tmy['parke'] = tmy['t_park'] * -.005 + .341
-#the most generous relationship that this data seems to allow is the code below:
-#I am also working to match real yearly avg kwh/mile for a Tesla in Fairbanks (results are
-# preliminary, and I will include them when the data is more complete), and it does look
-#like my cold weather impacts have been a bit harsher than reality, at least for energy while parked,
-#which is why I am trying to find a data-supported relationship that matches what I see in that data
-tmy['parke'] = tmy['t_park'] * -.004 + .25
-tmy['parke'] = tmy['parke'].where(tmy['parke'] > 0,0) #make sure this isn't less than zero!
-#NEED TO MAKE UPDATES HERE!  Data from an Anchorage Bolt shows a different trend for an UNPLUGGED park. Preliminary data
-#shows that the trend is similar except that when unplugged, kWh/hr does not exceed .25
+#Data from an Anchorage Bolt shows a different trend for an UNPLUGGED park. Preliminary data shows the following:
 #it is unknown if this is general to all vehicles or just the Bolt.
+# parke (kWh/hr) = -.006 * Temp(C) + .12 , and not less than 0
 #we will assume the vehicle is plugged in at night and unplugged during the day.  This is a big assumption and should allow for
 #adjustment in the future!!
-# where the time is at or after 8:30 and before or at 17:30, parke is a max of .25: 
+# where the time is at or after 8:30 and before or at 17:30, parke follows the fit to the unplugged Bolt data: 
 tmy['parke'] = tmy['parke'].where(
-        ((tmy.index.time <= datetime.time(8, 30)) | (tmy.index.time >= datetime.time(17, 30)))|(tmy.parke < .25), .25)
-  
+        ((tmy.index.time <= datetime.time(8, 30)) | (tmy.index.time >= datetime.time(17, 30))), tmy['t_park'] * -.006 + .12)
+tmy['parke'] = tmy['parke'].where(tmy['parke'] > 0,0) #make sure this isn't less than zero!
+
+#I have some derived data from 4 Alaskan Teslas as well, which broadly cooberates the Bolt data above, hopefully all of this will soon be
+#published so I can just refer to that here
+
 
 tmy['parke'] = tmy['parke']*tmy['parktime'] #adjusted for amount of time during the hour spent parked
 
 
-#FOR WARM IDLE - we now have trends for idling the Anchorage Bolt, and a few data points for a north slope Lightning.
-#more data is needed, but at this time the apparent trend from the Bolt is: -0.189 * T(F) + 7.56 but not less than 0,
-# the few Lightning data points at about -10F are in line with this, with a maximum of ~7.56kWh/hr
+#FOR WARM IDLE - we now have trends for idling the Anchorage Bolt, and a few data points for two north slope Lightnings (some derived Tesla data also
+#seems to be in broad agreement). More data is needed, but at this time the fit to the combined data from the Bolt and Lightnings is: 
+#-0.163 * T(C) + 3.10 but not less than 0,
+# the maximum in the data is ~7.56kWh/hr, but doesn't extend colder than about -25C.
 #we do expect a maximum at some point as heating systems run full blast...
-
 #(this forum says that 7kw is the max power of the Bolt heater: https://www.chevybolt.org/threads/how-long-can-a-bolt-battery-sustain-cabin-heat.37519/)
 
-idleT = 40 #note this is in F - sorry for not picking and staying with F/C!  Its a problem of a calculator in F
-#since that is what Alaskan public is used to and scientific/engineering work in C.  Really, the US should
-#have switched to metric when we had the chance!!
-
-tmy['idlee'] = tmy['t_park'] * -.189 + 7.56 #from my Bolt warm 'idle' data as of 2/23/23 - this IS in F
+tmy['idlee'] = tmy['t_park'] * -.163 + 3.10 #from Anchorage Bolt and N Slope F150 data
 tmy['idlee'] = tmy['idlee'].where(tmy['idlee'] > 0, 0) #min of 0kW
-tmy['idlee'] = tmy['idlee'].where(tmy['idlee'] < 7.56, 7.56) #max of 7.56 kWh/hr, highest seen in N. Slope lightning data, but for short idle...
-#right now the max idle temp by the fit is 40F, and I think that is ok, it is cold enough to want to keep the car warm...
-#I have set the idleT above to match this so that the gas vehicle idles at the same T
-tmy['idlee'] = tmy['idlee'].where(tmy['t_park'] < idleT, 0) #if parked temperature is greater than idleT, set idle energy to 0.
+tmy['idlee'] = tmy['idlee'].where(tmy['idlee'] < 7.56, 7.56) #max of 7.56 kWh/hr, highest seen in N. Slope lightning data
 tmy['idlee'] = tmy['idlee']*tmy['idletime']#adjusted for amount of time during the hour spent idling
 
 
 st.write("") #adding some spaces to try to keep text from overlapping
 
 
-
-
 #the below is code that finds the energy use of an EV based on the ambient temperature, according to published data
 #(including that from this author from Alaska EVs, see: A Global Daily Solar Photovoltaic Load 
 #Coverage Factor Map for Passenger Electric Vehicles, M Wilber, E Whitney, C Haupert, 2022 IEEE PES/IAS PowerAfrica, 1-4
-#From this paper, the relationship between relative efficiency and T is: RE = .000011T^3 + .00045T^2 - 0.038T + 1.57, T in C!!
+#From this paper, the relationship between relative efficiency and T for passenger cars is: RE = .000011T^3 + .00045T^2 - 0.038T + 1.57, T in C
 
-#database Temperatures are in F, so will make a celcius column as well!
-tmy['T_C'] = (tmy['db_temp'] - 32)*5/9
-
-#tmy['EpM_T'] = epm/1.2 *(.000011*tmy['T_C']**3 + .00045*tmy['T_C']**2 - 0.038*tmy['T_C'] + 1.57) #old!!
 #from some preliminary north slope Lightning data we have, it seems that the higher order terms/slope does not scale with the EPA rated
 #efficiency, just the intercept.  This makes sense as the cabin size to heat is similar to a car (the battery is bigger though,
 #so it might require more heat?) anyway, the below fits the data we have from the truck better:
-tmy['EpM_T'] = .28/1.2 *(.000011*tmy['T_C']**3 + .00045*tmy['T_C']**2 - 0.038*tmy['T_C']) + epm/1.2 * 1.57
+tmy['EpM_T'] = .28/1.15 *(.000011*tmy['T_C']**3 + .00045*tmy['T_C']**2 - 0.038*tmy['T_C']) + epm/1.15 * 1.57
 #energy use: 
-#tmy['kwh']= epm_t*tmy['miles']
 tmy['kwh']= tmy['EpM_T']*tmy['miles']
          
-#add on the energy use while parked:
-#tmy['kwh'] = tmy.kwh + tmy.parke
 #add on the energy use while parked and idling:
 tmy['kwh'] = tmy.kwh + tmy.parke + tmy.idlee
 
@@ -421,7 +392,7 @@ total_cost_ev = coe*tmy.kwh.sum()
 #according to fueleconomy.gov, an ICE can have 15 to 25% lower mpg at 20F than 77F. the 25% is for trips under 3-4 miles, so could adjust the below later for this
 #for now I am just using 20% less
 tmy['mpg'] = mpg
-tmy['mpg'] = tmy['mpg'].where((tmy['db_temp'] > 77), mpg - .2*mpg*(77-tmy['db_temp'])/57)
+tmy['mpg'] = tmy['mpg'].where((tmy['db_temp'] > 77), mpg - .2*mpg*(77-tmy['db_temp'])/57) #using the Temperature in F column for this calc
 
 tmy['gas'] = tmy.miles/tmy.mpg #gallons of gas used for driving a gas car
 
@@ -430,7 +401,9 @@ tmy['gas'] = tmy.miles/tmy.mpg #gallons of gas used for driving a gas car
 ############################
 #cars use about .2g/hr or more at idle : https://www.chicagotribune.com/autos/sc-auto-motormouth-0308-story.html
 #could make pickup trucks .4g/hr, but leave it at this from now since don't change e-truck either...
-#idleg = .2*idle/60*plug_days 
+
+idleT = 5 #note this is in C and is equivalent to 41F. We will set idle energy use to 0 above this, assuming that at warmer temps people are 
+#less likely to leave an engine running, even though energy for AC is likely at warm temperatures or in sunny conditions
 tmy['idleg'] = 0
 tmy['idleg'] = tmy['idleg'].where(tmy['t_park'] > idleT, .2) #only idle when less than idle Temperature set above 
 tmy['idleg'] = tmy['idleg']*tmy['idletime']#adjusted for amount of time during the hour spent idling
@@ -438,8 +411,8 @@ tmy['gas'] = tmy['gas'] + tmy['idleg']
 
 total_cost_gas = tmy.gas.sum()*dpg
 
-#what about the engine block heater?
-tmy_12 = tmy[['db_temp']].resample('D', label = 'right').min()
+#what about the engine block heater? Doing the calculations below woth Temperature in F.
+tmy_12 = tmy[['db_temp']].resample('D', label = 'right').min() 
 tmy_12['plug'] = 0
 tmy_12['plug'] = tmy_12['plug'].where(tmy_12.db_temp > 20, 1)
 plug_days = tmy_12.plug.sum()
@@ -450,13 +423,10 @@ else:
     kwh_block = 0
 cost_block = coe*kwh_block
 
-#older idle calcs:
-#idleg = .2*idle/60*plug_days #cars use about .2g/hr or more at idle : https://www.chicagotribune.com/autos/sc-auto-motormouth-0308-story.html
-#total_cost_gas = (tmy.gas.sum()+idleg)*dpg
 
 #now look at ghg emissions:
 #Every gallon of gasoline burned creates about 8.887 kg of CO2 (EPA)
-#ghg_ice = 8.887*(tmy.gas.sum()+idleg) #old
+
 ghg_ice = 8.887*tmy.gas.sum()
 
 ghg_ev = cpkwh*(tmy.kwh.sum() - pvkwh)
