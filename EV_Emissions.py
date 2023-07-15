@@ -380,7 +380,7 @@ st.write("") #adding some spaces to try to keep text from overlapping
 #so it might require more heat?) anyway, the below fits the data we have from the truck better:
 #tmy['EpM_T'] = .28/1.15 *(.000011*tmy['T_C']**3 + .00045*tmy['T_C']**2 - 0.038*tmy['T_C']) + epm/1.15 * 1.57
 #carrying through the math:
-tmy['EpM_T'] = .0000027*tmy['T_C']**3 + .000011*tmy['T_C']**2 - 0.00093*tmy['T_C']) + epm * 1.37
+tmy['EpM_T'] = .0000027*tmy['T_C']**3 + .000011*tmy['T_C']**2 - 0.00093*tmy['T_C'] + epm * 1.37
 
 #energy use: 
 tmy['kwh']= tmy['EpM_T']*tmy['miles']
