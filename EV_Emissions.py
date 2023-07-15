@@ -408,8 +408,8 @@ tmy['gas'] = tmy.miles/tmy.mpg #gallons of gas used for driving a gas car
 #cars use about .2g/hr or more at idle : https://www.chicagotribune.com/autos/sc-auto-motormouth-0308-story.html
 #pickup trucks .4g/hr
 
-idleT = 5 #note this is in C and is equivalent to 41F. We will set idle energy use to 0 above this, assuming that at warmer temps people are 
-#less likely to leave an engine running, even though energy for AC is likely at warm temperatures or in sunny conditions
+idleT = 19 #note this is in C and is equivalent to 66F. We will set idle energy use to 0 above this, assuming that at warmer temps people are 
+#less likely to leave an engine running, even though energy for AC is likely at warm temperatures or in sunny conditions. This is set to match the 0 point in EV data as well.
 tmy['idleg'] = 0
 tmy['idleg'] = tmy['idleg'].where(tmy['t_park'] > idleT, ig) #only idle when less than idle Temperature set above 
 tmy['idleg'] = tmy['idleg']*tmy['idletime']#adjusted for amount of time during the hour spent idling
