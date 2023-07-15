@@ -69,10 +69,13 @@ ev = st.selectbox('Select your vehicle type:', ('car', 'truck' )) #make a drop d
 if ev == 'car':
     epm = .28 #setting the default energy use per mile according to the EPA here!
     #2017 Chevy Bolt is energy per mile (epm) = 28kWh/100mi at 100% range (fueleconomy.gov)
-    mpg = 27 
+    mpg = 27
+    ig = .2 #gas used at idle for ICE equivalent: cars use about .2g/hr or more at idle : https://www.chicagotribune.com/autos/sc-auto-motormouth-0308-story.html
+#pickup trucks .4g/hr
 if ev == 'truck':
     epm = .5
     mpg = 20
+    ig = .4
 
 #find driving distance:
 owcommute = (st.slider('How many miles do you drive each day, on average?', value = 10))/2
@@ -403,12 +406,12 @@ tmy['gas'] = tmy.miles/tmy.mpg #gallons of gas used for driving a gas car
 # add gas from idling in the cold
 ############################
 #cars use about .2g/hr or more at idle : https://www.chicagotribune.com/autos/sc-auto-motormouth-0308-story.html
-#could make pickup trucks .4g/hr, but leave it at this from now since don't change e-truck either...
+#pickup trucks .4g/hr
 
 idleT = 5 #note this is in C and is equivalent to 41F. We will set idle energy use to 0 above this, assuming that at warmer temps people are 
 #less likely to leave an engine running, even though energy for AC is likely at warm temperatures or in sunny conditions
 tmy['idleg'] = 0
-tmy['idleg'] = tmy['idleg'].where(tmy['t_park'] > idleT, .2) #only idle when less than idle Temperature set above 
+tmy['idleg'] = tmy['idleg'].where(tmy['t_park'] > idleT, ig) #only idle when less than idle Temperature set above 
 tmy['idleg'] = tmy['idleg']*tmy['idletime']#adjusted for amount of time during the hour spent idling
 tmy['gas'] = tmy['gas'] + tmy['idleg']
 
