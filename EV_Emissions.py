@@ -466,7 +466,7 @@ ax.set_ylabel('EV Energy Use in kWh')
 
 # Add in a legend and title
 ax.legend(loc = 'upper right')
-ax.title('Monthly EV Energy Use')
+#ax.title('Monthly EV Energy Use')
 st.pyplot(fig)
 st.write("")       
 st.write("The effective yearly average kWh/mile for your EV is calculated as ", round(tmy.kwh.sum()/tmy.miles.sum(),2))
