@@ -458,7 +458,7 @@ fig, ax = plt.subplots()
 #ax.bar(x,tmy_month.kwh, width=0.35, align='edge', label = 'EV')
 ax.bar(x,tmy_month.parke, width=0.35, align='edge', label = 'Parked')
 ax.bar(x,tmy_month.drivee, width=0.35, align='edge', bottom = tmy_month.parke, label = 'Driving')
-ax.bar(x,tmy_month.idlee, width=0.35, align='edge', bottom = tmy_month.drive + tmy_month.parke, label = 'Idling')
+ax.bar(x,tmy_month.idlee, width=0.35, align='edge', bottom = [tmy_month.drive + tmy_month.parke], label = 'Idling')
     
 # Add the axis labels
 ax.set_xlabel('Month')
