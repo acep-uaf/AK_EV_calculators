@@ -333,23 +333,24 @@ if garage:
 
 #from an analysis of the data of 3 Bolts in southcentral Alaska, energy to condition battery while parked, while plugged in: 
 # parke (kWh/hr) = -.015 * Temp(C) + .26 , and not less than 0
-
-tmy['parke'] = tmy['t_park'] * -.015 + .26
-tmy['parke'] = tmy['parke'].where(tmy['parke'] > 0,0) #make sure this isn't less than zero! Could just do this once, below...
-
+#tmy['parke'] = tmy['t_park'] * -.015 + .26
+#tmy['parke'] = tmy['parke'].where(tmy['parke'] > 0,0)
 #Data from an Anchorage Bolt shows a different trend for an UNPLUGGED park. Preliminary data shows the following:
 #it is unknown if this is general to all vehicles or just the Bolt.
 # parke (kWh/hr) = -.006 * Temp(C) + .12 , and not less than 0
-#we will assume the vehicle is plugged in at night and unplugged during the day.  This is a big assumption and should allow for
-#adjustment in the future!!
+
+#if we assume the vehicle is plugged in at night and unplugged during the day (a big assumption) the following code handles that
 # where the time is at or after 8:30 and before or at 17:30, parke follows the fit to the unplugged Bolt data: 
-tmy['parke'] = tmy['parke'].where(
-        ((tmy.index.time <= datetime.time(8, 30)) | (tmy.index.time >= datetime.time(17, 30))), tmy['t_park'] * -.006 + .12)
-tmy['parke'] = tmy['parke'].where(tmy['parke'] > 0,0) #make sure this isn't less than zero!
+#tmy['parke'] = tmy['parke'].where(
+#        ((tmy.index.time <= datetime.time(8, 30)) | (tmy.index.time >= datetime.time(17, 30))), tmy['t_park'] * -.006 + .12)
+#tmy['parke'] = tmy['parke'].where(tmy['parke'] > 0,0) #make sure this isn't less than zero!
 
 #I have some derived data from 4 Alaskan Teslas as well, which broadly cooberates the Bolt data above, hopefully all of this will soon be
 #published so I can just refer to that here
 
+#however, it seems that real vehicles are actively plugged in a charging a small part of the time, at least low mileage ones, so maybe the below is more appropriate:
+tmy['parke'] = tmy['t_park'] * -.006 + .12
+tmy['parke'] = tmy['parke'].where(tmy['parke'] > 0,0)
 
 tmy['parke'] = tmy['parke']*tmy['parktime'] #adjusted for amount of time during the hour spent parked
 
@@ -380,13 +381,13 @@ st.write("") #adding some spaces to try to keep text from overlapping
 #so it might require more heat?) anyway, the below fits the data we have from the truck better:
 #tmy['EpM_T'] = .28/1.15 *(.000011*tmy['T_C']**3 + .00045*tmy['T_C']**2 - 0.038*tmy['T_C']) + epm/1.15 * 1.57
 #carrying through the math:
-tmy['EpM_T'] = .0000027*tmy['T_C']**3 + .000011*tmy['T_C']**2 - 0.00093*tmy['T_C'] + epm * 1.37
+tmy['EpM_T'] = .0000027*tmy['T_C']**3 + .00011*tmy['T_C']**2 - 0.0093*tmy['T_C'] + epm * 1.37
 
 #energy use: 
-tmy['kwh']= tmy['EpM_T']*tmy['miles']
+tmy['drivee']= tmy['EpM_T']*tmy['miles']
          
 #add on the energy use while parked and idling:
-tmy['kwh'] = tmy.kwh + tmy.parke + tmy.idlee
+tmy['kwh'] = tmy.drivee + tmy.parke + tmy.idlee
 
 
 #total cost to drive EV for a year:
@@ -454,16 +455,18 @@ st.write("")
 x = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 tmy_month = tmy.resample('M').sum()
 fig, ax = plt.subplots()
-ax.bar(x,tmy_month.kwh, width=0.35, align='edge', label = 'EV')
-
+#ax.bar(x,tmy_month.kwh, width=0.35, align='edge', label = 'EV')
+ax.bar(x,tmy_month.parke, width=0.35, align='edge', label = 'Parked')
+ax.bar(x,tmy_month.drivee, width=0.35, align='edge', bottom = tmy_month.parke, label = 'Driving')
+ax.bar(x,tmy_month.idlee, width=0.35, align='edge', bottom = tmy_month.drivee, label = 'Idling')
     
 # Add the axis labels
 ax.set_xlabel('Month')
 ax.set_ylabel('EV Energy Use in kWh')
 
 # Add in a legend and title
-#ax.legend(loc = 'upper right')
-#ax.title('')
+ax.legend(loc = 'upper right')
+ax.title('Monthly EV Energy Use')
 st.pyplot(fig)
 st.write("")       
 st.write("The effective yearly average kWh/mile for your EV is calculated as ", round(tmy.kwh.sum()/tmy.miles.sum(),2))
