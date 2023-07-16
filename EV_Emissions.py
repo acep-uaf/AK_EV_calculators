@@ -458,14 +458,14 @@ fig, ax = plt.subplots()
 #ax.bar(x,tmy_month.kwh, width=0.35, align='edge', label = 'EV')
 ax.bar(x,tmy_month.parke, width=0.35, align='edge', label = 'Parked')
 ax.bar(x,tmy_month.drivee, width=0.35, align='edge', bottom = tmy_month.parke, label = 'Driving')
-ax.bar(x,tmy_month.idlee, width=0.35, align='edge', bottom = tmy_month.drivee, label = 'Idling')
+ax.bar(x,tmy_month.idlee, width=0.35, align='edge', bottom = tmy_month.drive + tmy_month.parke, label = 'Idling')
     
 # Add the axis labels
 ax.set_xlabel('Month')
 ax.set_ylabel('EV Energy Use in kWh')
 
 # Add in a legend and title
-ax.legend(loc = 'upper right')
+ax.legend(loc = 'upper center')
 #ax.title('Monthly EV Energy Use')
 st.pyplot(fig)
 st.write("")       
