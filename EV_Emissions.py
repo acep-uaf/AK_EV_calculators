@@ -387,6 +387,7 @@ tmy['EpM_T'] = .0000027*tmy['T_C']**3 + .00011*tmy['T_C']**2 - 0.0093*tmy['T_C']
 tmy['drivee']= tmy['EpM_T']*tmy['miles']
          
 #add on the energy use while parked and idling:
+tmy['dpe'] = tmy.drivee + tmy.parke
 tmy['kwh'] = tmy.drivee + tmy.parke + tmy.idlee
 
 
@@ -458,9 +459,8 @@ fig, ax = plt.subplots()
 #ax.bar(x,tmy_month.kwh, width=0.35, align='edge', label = 'EV')
 ax.bar(x,tmy_month.parke, width=0.35, align='edge', label = 'Parked')
 ax.bar(x,tmy_month.drivee, width=0.35, align='edge', bottom = tmy_month.parke, label = 'Driving')
-#because I suck at matplotlib...:
-tmy_month['dp'] = tmy_month.drive + tmy_month.parke
-ax.bar(x,tmy_month.idlee, width=0.35, align='edge', bottom = tmy_month.dp, label = 'Idling')
+#I suck at matplotlib...just so you know:
+ax.bar(x,tmy_month.idlee, width=0.35, align='edge', bottom = tmy_month.dpe, label = 'Idling')
     
 # Add the axis labels
 ax.set_xlabel('Month')
