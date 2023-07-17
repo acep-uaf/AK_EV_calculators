@@ -355,14 +355,14 @@ tmy['parke'] = tmy['parke'].where(tmy['parke'] > 0,0)
 tmy['parke'] = tmy['parke']*tmy['parktime'] #adjusted for amount of time during the hour spent parked
 
 
-#FOR WARM IDLE - we now have trends for idling the Anchorage Bolt, and a few data points for two north slope Lightnings (some derived Tesla data also
-#seems to be in broad agreement). More data is needed, but at this time the fit to the combined data from the Bolt and Lightnings is: 
-#-0.163 * T(C) + 3.10 but not less than 0,
+#FOR WARM IDLE - we now have trends for idling the Anchorage Bolt, and a few data points for two north slope Lightnings, and for a few Teslas (some derived Tesla data also
+#seems to be in broad agreement). More data is needed, but at this time the fit to the combined data from the Bolt, teslas and Lightnings is: 
+#-0.138 * T(C) + 2.86 but not less than 0,
 # the maximum in the data is ~7.56kWh/hr, but doesn't extend colder than about -25C.
 #we do expect a maximum at some point as heating systems run full blast...
 #(this forum says that 7kw is the max power of the Bolt heater: https://www.chevybolt.org/threads/how-long-can-a-bolt-battery-sustain-cabin-heat.37519/)
 
-tmy['idlee'] = tmy['t_park'] * -.163 + 3.10 #from Anchorage Bolt and N Slope F150 data
+tmy['idlee'] = tmy['t_park'] * -.138 + 2.86 
 tmy['idlee'] = tmy['idlee'].where(tmy['idlee'] > 0, 0) #min of 0kW
 tmy['idlee'] = tmy['idlee'].where(tmy['idlee'] < 7.56, 7.56) #max of 7.56 kWh/hr, highest seen in N. Slope lightning data
 tmy['idlee'] = tmy['idlee']*tmy['idletime']#adjusted for amount of time during the hour spent idling
