@@ -350,7 +350,9 @@ if garage:
 
 #however, it seems that real vehicles are actively plugged in a charging a small part of the time, at least low mileage ones, so maybe the below is more appropriate:
 tmy['parke'] = tmy['t_park'] * -.006 + .12
-tmy['parke'] = tmy['parke'].where(tmy['parke'] > 0,0)
+#tmy['parke'] = tmy['parke'].where(tmy['parke'] > 0,0)
+#actually, at least the Bolt claims to not use the battery heater above 37F (2.78C) so lets try that:
+tmy['parke'] = tmy['parke'].where(tmy['t_park'] < 2.78,0)
 
 tmy['parke'] = tmy['parke']*tmy['parktime'] #adjusted for amount of time during the hour spent parked
 
