@@ -486,7 +486,7 @@ st.write("The underlying model relating energy use with temperature will be upda
 st.write("Thanks to Alan Mitchell of Analysis North for Alaskan utility data, tmy files, and wonderful code to access and use them all.")
 st.write("Community and Utility data are taken from http://ak-energy-data.analysisnorth.com/ and https://raw.githubusercontent.com/alanmitchell ")
 st.write("See also https://github.com/alanmitchell/heat-pump-calc")
-st.write("...And definitely check out the Alaskan Heat Pump Calculator at https://heatpump.cf to see if you should get a heat pump!")
+st.write("...And definitely check out the Alaskan Heat Pump Calculator at https://heatpump.analysisnorth.com to see if you should get a heat pump!")
 st.write("")
 st.write("")
 st.write("Please peak under the hood at this code.  Basically, a typical year's hourly temperature profile is combined with a daily driving profile and realtionships between the energy use for driving and maintaining the EV while parked vs temperature to arrive at a cost and emissions for the kWh needed by the EV.")
