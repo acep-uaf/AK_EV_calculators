@@ -448,11 +448,42 @@ ghg_block = cpkwh*kwh_block
 st.write("")
 
 
-st.write("Total cost of Electric Vehicle fuel per year = $", round(total_cost_ev,0))
-st.write("Total cost of Internal Combustion Engine (gas) fuel per year = $", round(total_cost_gas+cost_block,0))
-st.write("Total kg CO2 emissions of Electric Vehicle per year = ", round(ghg_ev,0))
-st.write("Total kg CO2 emissions of Internal Combustion Engine per year = ", round(ghg_ice + ghg_block,0))
+#st.write("Total cost of Electric Vehicle fuel per year = $", round(total_cost_ev,0))
+#st.write("Total cost of Internal Combustion Engine (gas) fuel per year = $", round(total_cost_gas+cost_block,0))
+#st.write("Total kg CO2 emissions of Electric Vehicle per year = ", round(ghg_ev,0))
+#st.write("Total kg CO2 emissions of Internal Combustion Engine per year = ", round(ghg_ice + ghg_block,0))
+
+fig, (ax1, ax2) = plt.subplots(1, 2)
+
+ax1.bar('EV',total_cost_ev, width=0.55, align='center', color = 'green')
+ax1.bar('Gas Vehicle',total_cost_gas+cost_block, width=0.55, align='center',  color = 'black')
+
+ax1.tick_params(left = False,  bottom = False,labelleft=False)   
+#add values to top of bars
+ax1.text('EV',total_cost_ev+2,'$'+str(round(total_cost_ev)), ha='center')
+ax1.text('Gas Vehicle',total_cost_gas+cost_block+2,'$'+str(round(total_cost_gas+cost_block)), ha='center')
+# Add the axis labels
+# get rid of the frame
+ax1.set(frame_on=False)
+
+ax1.set_title('Annual Cost of Fuel/Electricity')
+
+ax2.bar('EV',ghg_ev, width=0.55, align='center', color = 'green')
+ax2.bar('Gas Vehicle',ghg_ice + ghg_block, width=0.55, align='center',  color = 'black')
+ax2.set(frame_on=False)
+ax2.tick_params(left = False, bottom = False, labelleft=False) 
+
+#add values to top of bars
+
+ax2.text('EV',ghg_ev,str(round(ghg_ev))+' kg CO2', ha='center')
+ax2.text('Gas Vehicle',ghg_ice + ghg_block+2,str(round(ghg_ice + ghg_block))+' kg CO2', ha='center')
+
+
+ax2.set_title('Annual Greenhouse Gas Emissions')
+fig.tight_layout(pad=5.0)
+st.pyplot(fig)
 st.write("")
+
 st.write("Note that costs and emissions for the Internal Combustion Engine vehicle include gas and any electricity used for block/oilpan/etc heating.")
 st.write("")
 x = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
