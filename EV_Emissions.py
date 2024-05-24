@@ -11,11 +11,12 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import requests
+from datetime import date
 from ast import literal_eval
 import matplotlib.pyplot as plt
 
 # Most of the data files are located remotely and are retrieved via
-# an HTTP request.  The function below is used to retrieve the files,
+# an HTTP request. The function below is used to retrieve the files,
 # which are Pandas DataFrames
 
 # The base URL to the site where the remote files are located
@@ -38,6 +39,7 @@ def tmy_from_id(tmy_id):
     """Returns a DataFrame of TMY data for the climate site identified
     by 'tmy_id'.
     """
+    print('piss')
     df = get_df(f'wx/tmy3/proc/{tmy_id}.pkl')
     return df
 st.image(['ACEP.png','AEA Logo 3line Flush Left in Gradient Color.png'])
@@ -103,7 +105,19 @@ cpkwh_default = dfu['CO2'].loc[dfu['ID']==util].iloc[0]/2.2 #find the CO2 per kW
 cpkwh_default = float(cpkwh_default)
 cpkwh = cpkwh_default
 pvkwh = 0 #initialize to no pv kwh...
-dpg = st.slider('How many dollars do you pay per gallon of gas?', value = 4.00, max_value = 20.00)
+
+#queries the DCRA Data Portal API for up-to-date gas prices for the chosen community, if no gas price can be found the user will be prompted to set a gas price
+currentYear = date.today().strftime('%Y')
+query = 'https://maps.commerce.alaska.gov/server/rest/services/Services/CDO_Utilities/MapServer/6/query?where=CommunityName =\'' + city + '\' AND ReportingYear = ' + currentYear + ' &outFields= CommunityName, ReportingYear, GasRetailGal &returnGeometry=false&outSR=&f=json'
+print(query)
+response = requests.get(query)
+#print(response.json()['features'][0]['attributes']['GasRetailGal'])
+
+if(len(response.json()['features']) == 0):
+   dpg = st.slider('How many dollars do you pay per gallon of gas?', value = 4.00, max_value = 20.00)
+else:
+   dpg = response.json()['features'][0]['attributes']['GasRetailGal']
+   st.write('The calculator found an up-to-date gas price for your community:', ' :green[${price}]'.format(price = dpg))
 plug = False
 idle = 5
 garage = False
@@ -487,7 +501,7 @@ st.write("")
 st.write("Note that costs and emissions for the Internal Combustion Engine vehicle include gas and any electricity used for block/oilpan/etc heating.")
 st.write("")
 x = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-tmy_month = tmy.resample('M').sum()
+tmy_month = tmy.resample('ME').sum()
 fig, ax = plt.subplots()
 #ax.bar(x,tmy_month.kwh, width=0.35, align='edge', label = 'EV')
 ax.bar(x,tmy_month.parke, width=0.35, align='edge', label = 'Parked')
