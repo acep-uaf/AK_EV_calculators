@@ -67,14 +67,15 @@ tmy = tmy_from_id(tmyid)
 #database Temperatures are in F, so will make a celcius column as well, since our energy use relationships use celcius
 tmy['T_C'] = (tmy['db_temp'] - 32)*5/9
 
-ev = st.selectbox('Select your vehicle type:', ('car', 'truck' )) #make a drop down list and get choice#choose vehicle type
-if ev == 'car':
+epm = 0.28
+ev = st.radio('Select your vehicle type:', ('Car', 'Truck' )) #make a drop down list and get choice#choose vehicle type
+if ev == 'Car':
     epm = .28 #setting the default energy use per mile according to the EPA here!
     #2017 Chevy Bolt is energy per mile (epm) = 28kWh/100mi at 100% range (fueleconomy.gov)
     mpg = 27
     ig = .2 #gas used at idle for ICE equivalent: cars use about .2g/hr or more at idle : https://www.chicagotribune.com/autos/sc-auto-motormouth-0308-story.html
 #pickup trucks .4g/hr
-if ev == 'truck':
+if ev == 'Truck':
     epm = .5
     mpg = 20
     ig = .4
@@ -112,12 +113,17 @@ query = 'https://maps.commerce.alaska.gov/server/rest/services/Services/CDO_Util
 print(query)
 response = requests.get(query)
 #print(response.json()['features'][0]['attributes']['GasRetailGal'])
-
-if(len(response.json()['features']) == 0):
+query_len = len(response.json()['features'])
+dpg = 0
+if(query_len == 0):
    dpg = st.slider('How many dollars do you pay per gallon of gas?', value = 4.00, max_value = 20.00)
-else:
+elif(query_len == 1):
    dpg = response.json()['features'][0]['attributes']['GasRetailGal']
    st.write('The calculator found an up-to-date gas price for your community:', ' :green[${price}]'.format(price = dpg))
+else:
+   for i in range(query_len):
+      dpg += response.json()['features'][i]['attributes']['GasRetailGal']
+   st.write('The calculator found an avergae of the up-to-date gas prices for your community:', ' :green[${price}]'.format(price = dpg))
 plug = False
 idle = 5
 garage = False
@@ -125,6 +131,9 @@ garage = False
 #more complicated input:
 complicated = st.checkbox("I would like to check and adjust other factors in this calculation.")
 if complicated: 
+    if(query_len >= 1):
+       dpg = st.slider('How many dollars do you pay per gallon of gas?', value = dpg, max_value = 20.00)
+
     weekend = (st.slider('If you drive a different amount on weekends, how many miles do you drive each weekend day, on average?', value = round(owcommute*2,0), max_value = 100.0))/2   
  #add a garage option for overnight parking
     garage = st.checkbox("I park in a garage overnight.")
