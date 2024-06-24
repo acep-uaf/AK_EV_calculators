@@ -512,7 +512,7 @@ st.write("")
 st.write("Note that costs and emissions for the Internal Combustion Engine vehicle include gas and any electricity used for block/oilpan/etc heating.")
 st.write("")
 x = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-tmy_month = tmy.resample('ME').sum()
+tmy_month = tmy.resample('M').sum()
 fig, ax = plt.subplots()
 #ax.bar(x,tmy_month.kwh, width=0.35, align='edge', label = 'EV')
 ax.bar(x,tmy_month.parke, width=0.35, align='edge', label = 'Parked')
