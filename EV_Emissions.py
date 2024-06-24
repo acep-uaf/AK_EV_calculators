@@ -108,7 +108,7 @@ pvkwh = 0 #initialize to no pv kwh...
 
 ################################################################################################
 #queries the DCRA Data Portal API for up-to-date gas prices for the chosen community, 
-# if no gas price can be found the user will be prompted to set a gas price
+#if no gas price can be found the user will be prompted to set a gas price
 currentYear = date.today().strftime('%Y')
 query = 'https://maps.commerce.alaska.gov/server/rest/services/Services/CDO_Utilities/MapServer/6/query?where=CommunityName =\'' + city + '\' AND ReportingYear = ' + currentYear + ' &outFields= CommunityName, ReportingYear, GasRetailGal &returnGeometry=false&outSR=&f=json'
 response = requests.get(query)
