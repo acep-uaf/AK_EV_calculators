@@ -11,11 +11,12 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import requests
+from datetime import date
 from ast import literal_eval
 import matplotlib.pyplot as plt
 
 # Most of the data files are located remotely and are retrieved via
-# an HTTP request.  The function below is used to retrieve the files,
+# an HTTP request. The function below is used to retrieve the files,
 # which are Pandas DataFrames
 
 # The base URL to the site where the remote files are located
@@ -65,14 +66,15 @@ tmy = tmy_from_id(tmyid)
 #database Temperatures are in F, so will make a celcius column as well, since our energy use relationships use celcius
 tmy['T_C'] = (tmy['db_temp'] - 32)*5/9
 
-ev = st.selectbox('Select your vehicle type:', ('car', 'truck' )) #make a drop down list and get choice#choose vehicle type
-if ev == 'car':
+epm = 0.28
+ev = st.radio('Select your vehicle type:', ('Car', 'Truck' )) #make a drop down list and get choice#choose vehicle type
+if ev == 'Car':
     epm = .28 #setting the default energy use per mile according to the EPA here!
     #2017 Chevy Bolt is energy per mile (epm) = 28kWh/100mi at 100% range (fueleconomy.gov)
     mpg = 27
     ig = .2 #gas used at idle for ICE equivalent: cars use about .2g/hr or more at idle : https://www.chicagotribune.com/autos/sc-auto-motormouth-0308-story.html
 #pickup trucks .4g/hr
-if ev == 'truck':
+if ev == 'Truck':
     epm = .5
     mpg = 20
     ig = .4
@@ -103,7 +105,27 @@ cpkwh_default = dfu['CO2'].loc[dfu['ID']==util].iloc[0]/2.2 #find the CO2 per kW
 cpkwh_default = float(cpkwh_default)
 cpkwh = cpkwh_default
 pvkwh = 0 #initialize to no pv kwh...
-dpg = st.slider('How many dollars do you pay per gallon of gas?', value = 4.00, max_value = 20.00)
+
+################################################################################################
+#queries the DCRA Data Portal API for up-to-date gas prices for the chosen community, 
+#if no gas price can be found the user will be prompted to set a gas price
+currentYear = date.today().strftime('%Y')
+query = 'https://maps.commerce.alaska.gov/server/rest/services/Services/CDO_Utilities/MapServer/6/query?where=CommunityName =\'' + city + '\' AND ReportingYear = ' + currentYear + ' &outFields= CommunityName, ReportingYear, GasRetailGal &returnGeometry=false&outSR=&f=json'
+response = requests.get(query)
+
+query_len = len(response.json()['features'])
+dpg = 0
+
+if(query_len == 0):
+   dpg = st.slider('How many dollars do you pay per gallon of gas?', value = 4.00, max_value = 20.00)
+elif(query_len == 1):
+   dpg = response.json()['features'][0]['attributes']['GasRetailGal']
+   st.write('The calculator found an up-to-date gas price for your community:', ' :green[${price}]'.format(price = dpg))
+else:
+   for i in range(query_len):
+      dpg += response.json()['features'][i]['attributes']['GasRetailGal']
+   st.write('The calculator found an avergae of the up-to-date gas prices for your community:', ' :green[${price}]'.format(price = dpg))
+   
 plug = False
 idle = 5
 garage = False
@@ -111,6 +133,9 @@ garage = False
 #more complicated input:
 complicated = st.checkbox("I would like to check and adjust other factors in this calculation.")
 if complicated: 
+    if(query_len >= 1):
+       dpg = st.slider('How many dollars do you pay per gallon of gas?', value = dpg, max_value = 20.00)
+
     weekend = (st.slider('If you drive a different amount on weekends, how many miles do you drive each weekend day, on average?', value = round(owcommute*2,0), max_value = 100.0))/2   
  #add a garage option for overnight parking
     garage = st.checkbox("I park in a garage overnight.")
