@@ -59,7 +59,6 @@ dfu = pd.read_csv('https://raw.githubusercontent.com/alanmitchell/akwlib-export/
 cities = dfc['aris_city'].drop_duplicates().sort_values(ignore_index = True) #get a list of community names
 city = st.selectbox('Select your community (start typing to jump down the list):', cities ) #make a drop down list and get choice
 tmyid = dfc['TMYid'].loc[dfc['aris_city']==city].iloc[0] #find the corresponding TMYid
-
 #get the tmy for the community chosen:
 tmy = tmy_from_id(tmyid)
 
@@ -108,23 +107,35 @@ pvkwh = 0 #initialize to no pv kwh...
 
 ################################################################################################
 #queries the DCRA Data Portal API for up-to-date gas prices for the chosen community, 
-#if no gas price can be found the user will be prompted to set a gas price
+# if no gas price can be found the user will be prompted to set a gas price
 currentYear = date.today().strftime('%Y')
-query = 'https://maps.commerce.alaska.gov/server/rest/services/Services/CDO_Utilities/MapServer/6/query?where=CommunityName =\'' + city + '\' AND ReportingYear = ' + currentYear + ' &outFields= CommunityName, ReportingYear, GasRetailGal &returnGeometry=false&outSR=&f=json'
-response = requests.get(query)
+city = city.replace('\'', '\'\'')
 
+query = 'https://maps.commerce.alaska.gov/server/rest/services/Services/CDO_Utilities/MapServer/6/query?where=CommunityName =\'' + city + '\' AND ReportingYear = ' + currentYear + ' &outFields= CommunityName, ReportingYear, GasRetailGal, ReportingDate &returnGeometry=false&outSR=&f=json'
+response = requests.get(query)
+# print(query)
+# print(response.json()['features'])
 query_len = len(response.json()['features'])
 dpg = 0
 
 if(query_len == 0):
    dpg = st.slider('How many dollars do you pay per gallon of gas?', value = 4.00, max_value = 20.00)
-elif(query_len == 1):
-   dpg = response.json()['features'][0]['attributes']['GasRetailGal']
-   st.write('The calculator found an up-to-date gas price for your community:', ' :green[${price}]'.format(price = dpg))
+elif query_len == 1:
+  dpg = response.json()['features'][query_len - 1]['attributes']['GasRetailGal']
+  st.write('The calculator found an up-to-date gas price for your community:', ' :green[${price}]'.format(price = dpg))
 else:
-   for i in range(query_len):
-      dpg += response.json()['features'][i]['attributes']['GasRetailGal']
-   st.write('The calculator found an avergae of the up-to-date gas prices for your community:', ' :green[${price}]'.format(price = dpg))
+  report_date = 0
+  most_recent_index = 0
+  most_recent = response.json()['features'][0]['attributes']['ReportingDate']
+  for index in range(1, query_len):
+    report_date = response.json()['features'][index]['attributes']['ReportingDate']
+    if report_date > most_recent:
+      most_recent = report_date
+      most_recent_index = index
+      
+  dpg = response.json()['features'][most_recent_index]['attributes']['GasRetailGal']
+  st.write('The calculator found an up-to-date gas price for your community:', ' :green[${price}]'.format(price = dpg))  
+
    
 plug = False
 idle = 5
@@ -420,14 +431,14 @@ tmy['kwh'] = tmy.drivee + tmy.parke + tmy.idlee
 
 #total cost to drive EV for a year:
 
-total_cost_ev = coe*tmy.kwh.sum()
+total_cost_ev = coe * tmy.kwh.sum()
 
 
 #make the mpg of the gas vehicle temperature dependent too like above.
 #according to fueleconomy.gov, an ICE can have 15 to 25% lower mpg at 20F than 77F. the 25% is for trips under 3-4 miles, so could adjust the below later for this
 #for now I am just using 20% less
 tmy['mpg'] = mpg
-tmy['mpg'] = tmy['mpg'].where((tmy['db_temp'] > 77), mpg - .2*mpg*(77-tmy['db_temp'])/57) #using the Temperature in F column for this calc
+tmy['mpg'] = tmy['mpg'].where((tmy['db_temp'] > 77), mpg - 0.2 * mpg*(77-tmy['db_temp'])/57)        #using the Temperature in F column for this calc
 
 tmy['gas'] = tmy.miles/tmy.mpg #gallons of gas used for driving a gas car
 
@@ -485,8 +496,8 @@ ax1.bar('Gas Vehicle',total_cost_gas+cost_block, width=0.55, align='center',  co
 
 ax1.tick_params(left = False,  bottom = False,labelleft=False)   
 #add values to top of bars
-ax1.text('EV',total_cost_ev+2,'$'+str(round(total_cost_ev)), ha='center')
-ax1.text('Gas Vehicle',total_cost_gas+cost_block+2,'$'+str(round(total_cost_gas+cost_block)), ha='center')
+ax1.text('EV',total_cost_ev+5,'$'+str(round(total_cost_ev)), ha='center')
+ax1.text('Gas Vehicle',total_cost_gas+cost_block+5,'$'+str(round(total_cost_gas+cost_block)), ha='center')
 # Add the axis labels
 # get rid of the frame
 ax1.set(frame_on=False)
@@ -500,8 +511,8 @@ ax2.tick_params(left = False, bottom = False, labelleft=False)
 
 #add values to top of bars
 
-ax2.text('EV',ghg_ev,str(round(ghg_ev))+' kg CO2', ha='center')
-ax2.text('Gas Vehicle',ghg_ice + ghg_block+2,str(round(ghg_ice + ghg_block))+' kg CO2', ha='center')
+ax2.text('EV',ghg_ev+20,str(round(ghg_ev))+' kg CO2', ha='center')
+ax2.text('Gas Vehicle',ghg_ice + ghg_block+20,str(round(ghg_ice + ghg_block))+' kg CO2', ha='center')
 
 
 ax2.set_title('Annual Greenhouse Gas Emissions')
