@@ -122,7 +122,7 @@ if(query_len == 0):
    dpg = st.slider('How many dollars do you pay per gallon of gas?', value = 4.00, max_value = 20.00)
 elif query_len == 1:
   dpg = response.json()['features'][query_len - 1]['attributes']['GasRetailGal']
-  st.write('The calculator found an up-to-date gas price for your community:', ' :green[${price}]'.format(price = dpg))
+  st.write('The calculator found an up-to-date gas price for your community:', ' :green[${price:.2f}]'.format(price = dpg))
 else:
   report_date = 0
   most_recent_index = 0
@@ -134,7 +134,7 @@ else:
       most_recent_index = index
       
   dpg = response.json()['features'][most_recent_index]['attributes']['GasRetailGal']
-  st.write('The calculator found an up-to-date gas price for your community:', ' :green[${price}]'.format(price = dpg))  
+  st.write('The calculator found an up-to-date gas price for your community:', ' :green[${price:.2f}]'.format(price = dpg))  
 
    
 plug = False
